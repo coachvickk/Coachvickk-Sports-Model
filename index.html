@@ -28,10 +28,33 @@
 @keyframes fadeInUp{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:translateY(0)}}
 @keyframes flicker{0%,100%{opacity:1}92%{opacity:1}93%{opacity:0.3}94%{opacity:1}97%{opacity:0.5}98%{opacity:1}}
 @keyframes scanMove{0%{top:-50%}100%{top:100%}}
-@keyframes glitchText{0%{text-shadow:0 0 20px var(--neon),0 0 60px var(--neon)}50%{text-shadow:0 0 40px var(--neon),0 0 80px var(--neon),3px 0 #f0f,−3px 0 #0ff}100%{text-shadow:0 0 20px var(--neon),0 0 60px var(--neon)}}
+@keyframes glitchText{0%{text-shadow:0 0 20px var(--neon),0 0 60px var(--neon)}50%{text-shadow:0 0 40px var(--neon),0 0 80px var(--neon),3px 0 #f0f,-3px 0 #0ff}100%{text-shadow:0 0 20px var(--neon),0 0 60px var(--neon)}}
 @keyframes cardStagger{0%{opacity:0;transform:translateY(40px) scale(0.9)}100%{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes selectFlash{0%{box-shadow:0 0 0 0 var(--beer-color)}50%{box-shadow:0 0 40px 10px var(--beer-color)}100%{box-shadow:0 0 60px 20px var(--beer-color)}}
 @keyframes countPop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* FLAG + EAGLE ANIMATIONS */
+@keyframes flag-appear{
+  0%{opacity:0;transform:scale(0.3) rotate(-10deg)}
+  15%{opacity:1;transform:scale(1.1) rotate(2deg)}
+  25%{transform:scale(1) rotate(0deg)}
+  70%{opacity:1}
+  100%{opacity:0;transform:scale(1.05) rotate(0deg)}
+}
+@keyframes eagle-fly{
+  0%{left:-20%;top:25%;transform:scaleX(-1) scale(1) rotate(0deg);opacity:1}
+  25%{top:15%;transform:scaleX(-1) scale(1.5) rotate(-10deg);opacity:1}
+  50%{top:30%;transform:scaleX(-1) scale(1.3) rotate(5deg);opacity:1}
+  75%{top:18%;transform:scaleX(-1) scale(1.4) rotate(-5deg);opacity:1}
+  100%{left:110%;top:25%;transform:scaleX(-1) scale(1) rotate(0deg);opacity:0}
+}
+@keyframes flag-wave{
+  0%{transform:perspective(400px) rotateY(0deg)}
+  25%{transform:perspective(400px) rotateY(5deg)}
+  50%{transform:perspective(400px) rotateY(0deg)}
+  75%{transform:perspective(400px) rotateY(-5deg)}
+  100%{transform:perspective(400px) rotateY(0deg)}
+}
 
 /* ===== CSS VARIABLES ===== */
 :root{
@@ -270,6 +293,45 @@ body{
   padding:28px 0 14px;
 }
 
+/* ===== METRIC TABS ===== */
+.metric-tab{
+  margin:8px 0;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+  transition:border-color 0.3s;
+}
+.metric-tab:hover{border-color:var(--border-hover)}
+.metric-tab-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;
+  background:var(--bg-card);
+  cursor:pointer;
+  font-size:0.65rem;font-weight:700;
+  color:var(--text-muted);
+  letter-spacing:3px;text-transform:uppercase;
+  transition:all 0.3s;user-select:none;
+}
+.metric-tab-header:hover{color:var(--text);background:var(--bg-card-hover)}
+.metric-tab-header:active{transform:scale(0.99)}
+.tab-header-left{display:flex;align-items:center;gap:10px}
+.tab-icon{font-size:1rem;-webkit-text-fill-color:initial}
+.tab-arrow{
+  transition:transform 0.3s ease;font-size:0.8rem;
+  color:var(--text-dim);
+}
+.metric-tab.open .tab-arrow{transform:rotate(90deg);color:var(--accent)}
+.metric-tab-content{
+  max-height:0;overflow:hidden;
+  transition:max-height 0.4s ease,padding 0.4s ease;
+  padding:0 16px;
+  background:rgba(255,255,255,0.01);
+}
+.metric-tab.open .metric-tab-content{
+  max-height:500px;padding:16px;
+}
+.metric-tab.open{border-color:rgba(255,107,53,0.15)}
+
 /* STATS */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stat-card{
@@ -288,6 +350,7 @@ body{
   font-size:0.55rem;color:var(--text-muted);letter-spacing:2px;
   text-transform:uppercase;margin-top:6px;font-weight:600;
 }
+.stat-value.small-text{font-size:0.9rem}
 
 /* ACHIEVEMENTS */
 .achievements-list{display:flex;flex-wrap:wrap;gap:8px}
@@ -367,8 +430,67 @@ body{
   padding:30px 20px;letter-spacing:1px;
 }
 
-/* CALL 911 MODE */
-body.call911{animation:call911 0.5s infinite}
+/* CALL 911 MODE - plays only twice (1 second total) */
+body.call911{animation:call911 0.5s ease 2 forwards}
+
+/* ===== FLAG OVERLAY ===== */
+.flag-overlay{
+  position:fixed;inset:0;z-index:8000;
+  pointer-events:none;opacity:0;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.4);
+}
+.flag-overlay.active{
+  animation:flag-appear 2.5s ease forwards;
+}
+.flag-container{
+  width:80vw;max-width:500px;
+  aspect-ratio:19/10;position:relative;
+  overflow:hidden;border-radius:4px;
+  box-shadow:0 0 80px rgba(255,0,0,0.4),0 0 120px rgba(0,0,180,0.3),0 0 200px rgba(255,255,255,0.1);
+  animation:flag-wave 0.6s ease infinite;
+}
+.flag-stripes{
+  width:100%;height:100%;
+  background:repeating-linear-gradient(
+    to bottom,
+    #B22234 0%,#B22234 7.69%,
+    #fff 7.69%,#fff 15.38%
+  );
+}
+.flag-canton{
+  position:absolute;top:0;left:0;
+  width:40%;height:53.85%;
+  background:#3C3B6E;
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  grid-template-rows:repeat(5,1fr);
+  align-items:center;justify-items:center;
+  padding:2px;
+}
+.flag-star{
+  color:#fff;font-size:0.6rem;line-height:1;
+  text-shadow:0 0 4px rgba(255,255,255,0.8);
+}
+.flag-text{
+  position:absolute;bottom:-40px;left:0;right:0;
+  text-align:center;
+  font-family:'Press Start 2P',monospace;
+  font-size:0.9rem;color:#fff;
+  text-shadow:0 0 20px rgba(255,0,0,0.8),0 0 40px rgba(0,0,255,0.6);
+  letter-spacing:4px;
+}
+
+/* ===== EAGLE FLY ===== */
+.eagle-fly{
+  position:fixed;z-index:8500;
+  font-size:5rem;pointer-events:none;
+  top:25%;left:-20%;opacity:0;
+  filter:drop-shadow(0 0 30px rgba(255,215,0,0.6)) drop-shadow(0 0 60px rgba(255,107,53,0.3));
+}
+.eagle-fly.active{
+  animation:eagle-fly 2s ease-in-out forwards;
+}
 
 /* FOOTER */
 .footer{
@@ -394,6 +516,16 @@ body.call911{animation:call911 0.5s infinite}
 <div class="warrior-flash" id="warriorFlash">
   <div class="warrior-flash-text">LET'S GO!</div>
 </div>
+
+<!-- ===== FLAG + EAGLE OVERLAY ===== -->
+<div class="flag-overlay" id="flagOverlay">
+  <div class="flag-container">
+    <div class="flag-stripes"></div>
+    <div class="flag-canton" id="flagCanton"></div>
+    <div class="flag-text">U S A</div>
+  </div>
+</div>
+<div class="eagle-fly" id="eagleFly">&#x1F985;</div>
 
 <!-- ===== MAIN DASHBOARD ===== -->
 <div id="app">
@@ -424,12 +556,45 @@ body.call911{animation:call911 0.5s infinite}
     </div>
   </div>
 
-  <div class="section-header">All-Time Stats</div>
-  <div class="stats-grid">
-    <div class="stat-card"><div class="stat-value" id="statHours">0</div><div class="stat-label">Total Hours</div></div>
-    <div class="stat-card"><div class="stat-value" id="statBeers">0</div><div class="stat-label">Total Beers</div></div>
-    <div class="stat-card"><div class="stat-value" id="statAvg">0.0</div><div class="stat-label">Avg Beers/Hr</div></div>
-    <div class="stat-card"><div class="stat-value" id="statRecord">0</div><div class="stat-label">Record Beers</div></div>
+  <!-- SESSION METRICS TAB -->
+  <div class="metric-tab" id="sessionTab">
+    <div class="metric-tab-header" onclick="toggleMetricTab('sessionTab')">
+      <div class="tab-header-left">
+        <span class="tab-icon">&#x1F4CA;</span>
+        <span>Session Metrics</span>
+      </div>
+      <span class="tab-arrow">&#x25B8;</span>
+    </div>
+    <div class="metric-tab-content">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value" id="sessDuration">--:--:--</div><div class="stat-label">Duration</div></div>
+        <div class="stat-card"><div class="stat-value" id="sessBeers">0</div><div class="stat-label">Beers</div></div>
+        <div class="stat-card"><div class="stat-value" id="sessRate">0.0</div><div class="stat-label">Beers / Hr</div></div>
+        <div class="stat-card"><div class="stat-value" id="sessStatus">--</div><div class="stat-label">Status</div></div>
+        <div class="stat-card" style="grid-column:1/-1"><div class="stat-value small-text" id="sessBeerType">--</div><div class="stat-label">Warrior</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIFETIME METRICS TAB -->
+  <div class="metric-tab" id="lifetimeTab">
+    <div class="metric-tab-header" onclick="toggleMetricTab('lifetimeTab')">
+      <div class="tab-header-left">
+        <span class="tab-icon">&#x1F3C6;</span>
+        <span>Lifetime Metrics</span>
+      </div>
+      <span class="tab-arrow">&#x25B8;</span>
+    </div>
+    <div class="metric-tab-content">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value" id="ltSessions">0</div><div class="stat-label">Sessions</div></div>
+        <div class="stat-card"><div class="stat-value" id="ltHours">0</div><div class="stat-label">Total Hours</div></div>
+        <div class="stat-card"><div class="stat-value" id="ltBeers">0</div><div class="stat-label">Total Beers</div></div>
+        <div class="stat-card"><div class="stat-value" id="ltAvg">0.0</div><div class="stat-label">Avg Beers/Hr</div></div>
+        <div class="stat-card"><div class="stat-value" id="ltRecord">0</div><div class="stat-label">Record Beers</div></div>
+        <div class="stat-card"><div class="stat-value small-text" id="ltFavBeer">--</div><div class="stat-label">Fav Warrior</div></div>
+      </div>
+    </div>
   </div>
 
   <div class="section-header">Achievements</div>
@@ -468,8 +633,9 @@ let shakeTimer = null;
 let timerInterval = null;
 let tickInterval = null;
 let statusInterval = null;
-let call911Interval = null;
+let call911Timeout = null;
 let audioCtx = null;
+let flagAnimating = false;
 
 const ACHIEVEMENTS = [
   { id:'first_blood', name:'First Blood', icon:'\u{1F37A}', desc:'1 beer consumed' },
@@ -488,24 +654,102 @@ function getAudioCtx(){
   return audioCtx;
 }
 
+function playGuitarRiff(){
+  const ctx=getAudioCtx();
+  const t=ctx.currentTime;
+
+  // Create distortion curve for that crunchy guitar tone
+  const distortion=ctx.createWaveShaper();
+  const samples=44100;
+  const curve=new Float32Array(samples);
+  for(let i=0;i<samples;i++){
+    const x=(i*2)/samples-1;
+    curve[i]=(Math.PI+40)*x/(Math.PI+40*Math.abs(x));
+  }
+  distortion.curve=curve;
+  distortion.oversample='4x';
+
+  // Master gain
+  const masterGain=ctx.createGain();
+  masterGain.gain.setValueAtTime(0.12,t);
+  distortion.connect(masterGain);
+  masterGain.connect(ctx.destination);
+
+  // Power chord riff: E5 -> A5 -> B5 -> E5 high -> final chug
+  const chords=[
+    {notes:[82.41,123.47,164.81],time:0,dur:0.35},
+    {notes:[110,164.81,220],time:0.35,dur:0.3},
+    {notes:[123.47,185,246.94],time:0.65,dur:0.25},
+    {notes:[164.81,246.94,329.63],time:0.9,dur:0.4},
+    {notes:[164.81,246.94,329.63,659.25],time:1.3,dur:0.7},
+  ];
+
+  chords.forEach(chord=>{
+    chord.notes.forEach(freq=>{
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain);gain.connect(distortion);
+      osc.type='sawtooth';
+      osc.frequency.setValueAtTime(freq,t+chord.time);
+      gain.gain.setValueAtTime(0.0001,t);
+      gain.gain.linearRampToValueAtTime(0.25,t+chord.time+0.01);
+      gain.gain.setValueAtTime(0.2,t+chord.time+chord.dur*0.7);
+      gain.gain.exponentialRampToValueAtTime(0.001,t+chord.time+chord.dur);
+      osc.start(t+chord.time);osc.stop(t+chord.time+chord.dur+0.05);
+    });
+  });
+
+  // Add some palm-mute percussive hits
+  [0,0.35,0.65].forEach(time=>{
+    const buf=ctx.createBuffer(1,ctx.sampleRate*0.05,ctx.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*0.5;
+    const noise=ctx.createBufferSource();
+    const nGain=ctx.createGain();
+    noise.buffer=buf;noise.connect(nGain);nGain.connect(ctx.destination);
+    nGain.gain.setValueAtTime(0.06,t+time);
+    nGain.gain.exponentialRampToValueAtTime(0.001,t+time+0.04);
+    noise.start(t+time);
+  });
+}
+
 function playEagleScreech(){
   const ctx=getAudioCtx();
-  const osc=ctx.createOscillator();const gain=ctx.createGain();
-  osc.connect(gain);gain.connect(ctx.destination);
-  osc.type='sawtooth';
-  osc.frequency.setValueAtTime(3200,ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(800,ctx.currentTime+0.3);
-  gain.gain.setValueAtTime(0.15,ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
-  osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.35);
-  const buf=ctx.createBuffer(1,ctx.sampleRate*0.15,ctx.sampleRate);
+  const t=ctx.currentTime;
+
+  // Main screech - high pitched with warble
+  const osc1=ctx.createOscillator();const gain1=ctx.createGain();
+  osc1.connect(gain1);gain1.connect(ctx.destination);
+  osc1.type='sawtooth';
+  osc1.frequency.setValueAtTime(3500,t);
+  osc1.frequency.exponentialRampToValueAtTime(2200,t+0.12);
+  osc1.frequency.exponentialRampToValueAtTime(3200,t+0.25);
+  osc1.frequency.exponentialRampToValueAtTime(2800,t+0.4);
+  osc1.frequency.exponentialRampToValueAtTime(900,t+0.8);
+  gain1.gain.setValueAtTime(0.18,t);
+  gain1.gain.setValueAtTime(0.15,t+0.4);
+  gain1.gain.exponentialRampToValueAtTime(0.001,t+0.9);
+  osc1.start(t);osc1.stop(t+0.9);
+
+  // Secondary harmonic for richness
+  const osc2=ctx.createOscillator();const gain2=ctx.createGain();
+  osc2.connect(gain2);gain2.connect(ctx.destination);
+  osc2.type='triangle';
+  osc2.frequency.setValueAtTime(4200,t);
+  osc2.frequency.exponentialRampToValueAtTime(1200,t+0.7);
+  gain2.gain.setValueAtTime(0.08,t);
+  gain2.gain.exponentialRampToValueAtTime(0.001,t+0.7);
+  osc2.start(t);osc2.stop(t+0.7);
+
+  // Noise texture
+  const buf=ctx.createBuffer(1,ctx.sampleRate*0.3,ctx.sampleRate);
   const data=buf.getChannelData(0);
   for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*0.3;
   const noise=ctx.createBufferSource();const nGain=ctx.createGain();
   noise.buffer=buf;noise.connect(nGain);nGain.connect(ctx.destination);
-  nGain.gain.setValueAtTime(0.08,ctx.currentTime);
-  nGain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);
-  noise.start(ctx.currentTime);
+  nGain.gain.setValueAtTime(0.08,t);
+  nGain.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+  noise.start(t);
 }
 
 function playSadBell(){
@@ -624,6 +868,45 @@ function playArcadeConfirm(){
   });
 }
 
+// ========== FLAG + EAGLE ANIMATION ==========
+function buildFlagStars(){
+  const canton=document.getElementById('flagCanton');
+  // 30 stars in a simplified grid
+  let stars='';
+  for(let i=0;i<30;i++) stars+='<div class="flag-star">\u2605</div>';
+  canton.innerHTML=stars;
+}
+
+function triggerFlagEagle(){
+  if(flagAnimating) return;
+  flagAnimating=true;
+
+  const flag=document.getElementById('flagOverlay');
+  const eagle=document.getElementById('eagleFly');
+
+  // Reset animations
+  flag.classList.remove('active');
+  eagle.classList.remove('active');
+  void flag.offsetWidth;
+  void eagle.offsetWidth;
+
+  // Start flag
+  flag.classList.add('active');
+
+  // Eagle starts slightly after flag appears
+  setTimeout(()=>{
+    eagle.classList.add('active');
+    playEagleScreech();
+  },300);
+
+  // Clean up after animations finish
+  setTimeout(()=>{
+    flag.classList.remove('active');
+    eagle.classList.remove('active');
+    flagAnimating=false;
+  },2600);
+}
+
 // ========== VISUALS ==========
 function spawnBeerRain(){
   for(let i=0;i<8;i++){
@@ -660,7 +943,7 @@ function screenShake(){
   const app=document.getElementById('app');
   const intensity=shakeIntensity;
   const startTime=Date.now();
-  const duration=1000; // exactly 1 second
+  const duration=1000;
 
   if(shakeTimer){cancelAnimationFrame(shakeTimer);shakeTimer=null;}
 
@@ -668,7 +951,7 @@ function screenShake(){
     const elapsed=Date.now()-startTime;
     if(elapsed>=duration){
       shakeTimer=null;
-      updateDrunkEffects(); // restore drunk tilt
+      updateDrunkEffects();
       return;
     }
     const x=(Math.random()*2-1)*intensity;
@@ -679,7 +962,6 @@ function screenShake(){
   }
 
   shakeFrame();
-  // intensity increases 50% for next beer
   shakeIntensity=Math.min(Math.round(shakeIntensity*1.5),50);
 }
 
@@ -693,7 +975,6 @@ function screenFlash(){
 function updateDrunkEffects(){
   const app=document.getElementById('app');
   const timer=document.getElementById('timerDisplay');
-  // only apply tilt if not currently shaking
   if(!shakeTimer){
     const maxTilt=8;
     const tiltDeg=Math.min(beers/12,1)*maxTilt*(Math.random()>0.5?1:-1);
@@ -715,6 +996,38 @@ function lerpColor(a,b,t){
   const ar=parseInt(a.slice(1,3),16),ag=parseInt(a.slice(3,5),16),ab=parseInt(a.slice(5,7),16);
   const br=parseInt(b.slice(1,3),16),bg=parseInt(b.slice(3,5),16),bb=parseInt(b.slice(5,7),16);
   return '#'+[Math.round(ar+(br-ar)*t),Math.round(ag+(bg-ag)*t),Math.round(ab+(bb-ab)*t)].map(c=>c.toString(16).padStart(2,'0')).join('');
+}
+
+// ========== METRIC TABS ==========
+function toggleMetricTab(tabId){
+  const tab=document.getElementById(tabId);
+  tab.classList.toggle('open');
+}
+
+function updateSessionMetrics(){
+  if(!sessionActive){
+    document.getElementById('sessDuration').textContent='--:--:--';
+    document.getElementById('sessBeers').textContent='0';
+    document.getElementById('sessRate').textContent='--';
+    document.getElementById('sessStatus').textContent='--';
+    document.getElementById('sessBeerType').textContent='--';
+    return;
+  }
+  const elapsed=getElapsedMs();
+  const hrs=elapsed/3600000;
+  const rate=hrs>0?(beers/hrs).toFixed(1):'0.0';
+  document.getElementById('sessDuration').textContent=formatTime(elapsed);
+  document.getElementById('sessBeers').textContent=beers;
+  document.getElementById('sessRate').textContent=rate;
+  document.getElementById('sessBeerType').textContent=selectedBeer?selectedBeer.emoji+' '+selectedBeer.name:'--';
+
+  const bph=hrs>0?beers/hrs:(beers>0?beers*60:0);
+  let status='Sober';
+  if(bph>=6) status='CALL 911';
+  else if(bph>=4) status='Send Help';
+  else if(bph>=2) status='Full Send';
+  else if(bph>=1) status='Patriotic';
+  document.getElementById('sessStatus').textContent=status;
 }
 
 // ========== WARRIOR SELECT ==========
@@ -748,21 +1061,18 @@ function selectWarrior(beerId){
   selectedBeer=beer;
   playArcadeConfirm();
 
-  // highlight selected card
   const cards=document.querySelectorAll('.warrior-card');
   cards.forEach(c=>{
     if(c.onclick.toString().includes(beerId)) c.classList.add('selected');
     else c.style.opacity='0.3';
   });
 
-  // flash "LET'S GO!" text
   setTimeout(()=>{
     const flash=document.getElementById('warriorFlash');
     flash.classList.add('visible');
     setTimeout(()=>{
       flash.classList.remove('visible');
       hideWarriorSelect();
-      // reset card styles
       cards.forEach(c=>{c.classList.remove('selected');c.style.opacity='';});
       startSession();
     },700);
@@ -782,12 +1092,23 @@ function updateStatus(){
   else if(bph<6){text='Send Help';color='#ff0000';}
   else{text='CALL 911';color='#ff0000';}
   badge.textContent=text;badge.style.color=color;badge.style.borderColor=color;
+
   if(text==='CALL 911'){
-    badge.style.animation='status-flash 0.5s infinite';
-    if(!call911Interval){call911Interval=setInterval(()=>{document.body.classList.add('call911');},100);document.body.classList.add('call911');}
+    // Flash for 1 second then stop (not continuous)
+    if(!document.body.classList.contains('call911')){
+      badge.style.animation='status-flash 0.5s ease 2';
+      document.body.classList.add('call911');
+      if(call911Timeout) clearTimeout(call911Timeout);
+      call911Timeout=setTimeout(()=>{
+        document.body.classList.remove('call911');
+        badge.style.animation='none';
+        call911Timeout=null;
+      },1000);
+    }
   }else{
     badge.style.animation='none';
-    if(call911Interval){clearInterval(call911Interval);call911Interval=null;document.body.classList.remove('call911');}
+    if(call911Timeout){clearTimeout(call911Timeout);call911Timeout=null;}
+    document.body.classList.remove('call911');
   }
 }
 
@@ -857,14 +1178,18 @@ function startSession(){
   document.getElementById('timerBtn').textContent='End Session';
   document.getElementById('timerBtn').classList.add('stop');
   document.getElementById('minusBtn').disabled=true;
-  // show selected beer
   if(selectedBeer){
     document.getElementById('selectedBeerDisplay').innerHTML=
       'Drinking: <span>'+selectedBeer.emoji+' '+selectedBeer.name+'</span>';
   }
-  updateDrunkEffects();playAirHorn();
+  // Auto-open session metrics tab
+  const sessTab=document.getElementById('sessionTab');
+  if(!sessTab.classList.contains('open')) sessTab.classList.add('open');
+
+  updateDrunkEffects();updateSessionMetrics();playAirHorn();
   timerInterval=setInterval(()=>{
     document.getElementById('timerDisplay').textContent=formatTime(getElapsedMs());
+    updateSessionMetrics();
     checkAchievements();
   },1000);
   tickInterval=setInterval(()=>{if(sessionActive)playTick();},1000);
@@ -894,9 +1219,10 @@ function endSession(){
   document.getElementById('timerDisplay').style.filter='none';
   document.body.style.backgroundColor='';
   document.body.classList.remove('call911');
-  if(call911Interval){clearInterval(call911Interval);call911Interval=null;}
+  if(call911Timeout){clearTimeout(call911Timeout);call911Timeout=null;}
   document.getElementById('selectedBeerDisplay').innerHTML='';
   selectedBeer=null;shakeIntensity=3;
+  updateSessionMetrics();
   updateStats();renderHistory();updateStatus();
 }
 
@@ -909,7 +1235,11 @@ function changeBeer(delta){
   document.getElementById('minusBtn').disabled=beers<=0;
 
   if(delta>0){
-    playEagleScreech();spawnBeerRain();screenShake();
+    // Guitar riff + flag/eagle animation on every beer
+    playGuitarRiff();
+    triggerFlagEagle();
+    spawnBeerRain();
+    screenShake();
     // pop animation on count
     countEl.classList.remove('pop');void countEl.offsetWidth;countEl.classList.add('pop');
     // pulse the + button
@@ -921,18 +1251,31 @@ function changeBeer(delta){
   }else{
     playSadBell();
   }
-  updateDrunkEffects();updateStatus();checkAchievements();
+  updateDrunkEffects();updateStatus();updateSessionMetrics();checkAchievements();
 }
 
 // ========== STATS ==========
 function updateStats(){
   const sessions=getSessions();let totalMs=0,totalBeers=0;
-  sessions.forEach(s=>{totalMs+=s.durationMs||0;totalBeers+=s.beers||0;});
+  const beerCounts={};
+  sessions.forEach(s=>{
+    totalMs+=s.durationMs||0;totalBeers+=s.beers||0;
+    if(s.beerType){beerCounts[s.beerType]=(beerCounts[s.beerType]||0)+1;}
+  });
   const totalHrs=totalMs/3600000;
-  document.getElementById('statHours').textContent=totalHrs.toFixed(1);
-  document.getElementById('statBeers').textContent=totalBeers;
-  document.getElementById('statAvg').textContent=totalHrs>0?(totalBeers/totalHrs).toFixed(1):'0.0';
-  document.getElementById('statRecord').textContent=getRecord();
+  document.getElementById('ltSessions').textContent=sessions.length;
+  document.getElementById('ltHours').textContent=totalHrs.toFixed(1);
+  document.getElementById('ltBeers').textContent=totalBeers;
+  document.getElementById('ltAvg').textContent=totalHrs>0?(totalBeers/totalHrs).toFixed(1):'0.0';
+  document.getElementById('ltRecord').textContent=getRecord();
+
+  // Find favorite beer
+  let favBeer='--';
+  let maxCount=0;
+  Object.entries(beerCounts).forEach(([name,count])=>{
+    if(count>maxCount){maxCount=count;favBeer=name;}
+  });
+  document.getElementById('ltFavBeer').textContent=favBeer;
 }
 
 // ========== HISTORY ==========
@@ -955,7 +1298,8 @@ function renderHistory(){
 
 // ========== INIT ==========
 function init(){
-  renderWarriorGrid();updateStats();renderHistory();renderAchievements();updateStatus();
+  buildFlagStars();
+  renderWarriorGrid();updateStats();renderHistory();renderAchievements();updateStatus();updateSessionMetrics();
 }
 init();
 
