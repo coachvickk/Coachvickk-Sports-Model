@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Blake's Damage Report</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff4500">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Damage Report">
+<link rel="apple-touch-icon" href="icon-192.svg">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 @keyframes pulse-glow{0%{box-shadow:0 0 8px #ff4500}50%{box-shadow:0 0 25px #ff4500,0 0 50px #ff450066}100%{box-shadow:0 0 8px #ff4500}}
@@ -766,6 +772,11 @@ function init() {
   updateStatus();
 }
 init();
+
+// Register service worker for PWA / offline support
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
