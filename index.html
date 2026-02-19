@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Blake's Damage Report</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+@keyframes pulse-glow{0%{box-shadow:0 0 8px #ff4500}50%{box-shadow:0 0 25px #ff4500,0 0 50px #ff450066}100%{box-shadow:0 0 8px #ff4500}}
+@keyframes toast-in{0%{transform:translateY(-100%);opacity:0}100%{transform:translateY(0);opacity:1}}
+@keyframes toast-out{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-100%);opacity:0}}
+@keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-4px)}20%,40%,60%,80%{transform:translateX(4px)}}
+@keyframes flash{0%{opacity:1}50%{opacity:0.3}100%{opacity:1}}
+@keyframes beer-fall{0%{transform:translateY(-40px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(360deg);opacity:0}}
+@keyframes confetti-fall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+@keyframes call911{0%,100%{background:#ff0000}50%{background:#0a0a0a}}
+@keyframes status-flash{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes btn-pulse{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+
+html{font-size:16px}
+body{
+  background:#0a0a0a;color:#fff;font-family:'Courier New',monospace;
+  min-height:100vh;display:flex;justify-content:center;
+  overflow-x:hidden;transition:background-color 0.8s ease;
+}
+#app{
+  width:100%;max-width:420px;padding:16px;padding-bottom:80px;
+  transition:transform 0.5s ease;transform-origin:center top;
+}
+
+/* HERO SECTION */
+.hero{text-align:center;padding:20px 0 10px}
+.title{
+  font-size:1.6rem;font-weight:900;text-transform:uppercase;
+  letter-spacing:2px;color:#ff4500;margin-bottom:4px;
+}
+.subtitle{font-size:0.7rem;color:#666;letter-spacing:4px;text-transform:uppercase}
+
+/* TIMER */
+.timer-section{text-align:center;padding:24px 0 8px}
+.timer-display{
+  font-size:4.5rem;font-weight:900;letter-spacing:4px;
+  color:#fff;font-family:'Courier New',monospace;
+  line-height:1;margin-bottom:12px;
+  transition:filter 0.5s ease;
+}
+.timer-btn{
+  background:#ff4500;color:#fff;border:none;
+  font-size:1.1rem;font-weight:900;text-transform:uppercase;
+  padding:14px 40px;cursor:pointer;letter-spacing:2px;
+  font-family:'Courier New',monospace;
+  border:3px solid #ff4500;transition:all 0.2s;
+}
+.timer-btn:hover{background:#fff;color:#ff4500}
+.timer-btn.stop{background:transparent;border-color:#ff4500;color:#ff4500}
+.timer-btn.stop:hover{background:#ff4500;color:#fff}
+
+/* STATUS BADGE */
+.status-section{text-align:center;padding:12px 0}
+.status-badge{
+  display:inline-block;padding:6px 20px;border-radius:50px;
+  font-size:0.8rem;font-weight:900;letter-spacing:1px;
+  text-transform:uppercase;transition:all 0.5s ease;
+  border:2px solid;
+}
+
+/* BEER COUNTER */
+.beer-section{text-align:center;padding:16px 0}
+.beer-label{font-size:0.7rem;color:#666;letter-spacing:4px;text-transform:uppercase;margin-bottom:8px}
+.beer-controls{display:flex;align-items:center;justify-content:center;gap:16px}
+.beer-btn{
+  width:64px;height:64px;border-radius:50%;border:3px solid #ff4500;
+  background:transparent;color:#ff4500;font-size:2rem;
+  font-weight:900;cursor:pointer;font-family:'Courier New',monospace;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;line-height:1;
+}
+.beer-btn:hover{background:#ff4500;color:#fff}
+.beer-btn:disabled{opacity:0.3;cursor:not-allowed}
+.beer-btn.plus-pulse{animation:btn-pulse 0.3s ease, pulse-glow 0.6s ease}
+.beer-count{
+  font-size:5rem;font-weight:900;color:#fff;
+  min-width:100px;text-align:center;line-height:1;
+}
+.beer-emoji{font-size:0.9rem;color:#666;margin-top:4px}
+
+/* SECTION HEADERS */
+.section-header{
+  font-size:0.75rem;color:#ff4500;letter-spacing:4px;
+  text-transform:uppercase;font-weight:900;
+  padding:24px 0 12px;border-top:2px solid #222;
+  margin-top:16px;
+}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-card{
+  border:2px solid #333;padding:12px;text-align:center;
+  background:#111;
+}
+.stat-value{font-size:1.6rem;font-weight:900;color:#ff4500}
+.stat-label{font-size:0.6rem;color:#666;letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+
+/* HISTORY */
+.history-list{display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto}
+.history-card{
+  border:3px solid #fff;padding:12px;background:#0a0a0a;
+  display:grid;grid-template-columns:1fr 1fr;gap:4px;
+}
+.history-card .hc-date{grid-column:1/-1;font-size:0.65rem;color:#666;letter-spacing:1px}
+.history-card .hc-val{font-size:1.1rem;font-weight:900}
+.history-card .hc-lbl{font-size:0.55rem;color:#888;text-transform:uppercase;letter-spacing:1px}
+.history-card .hc-score{color:#ff4500}
+
+/* ACHIEVEMENTS */
+.achievements-list{display:flex;flex-wrap:wrap;gap:6px}
+.ach-badge{
+  padding:4px 10px;border:1px solid #333;font-size:0.65rem;
+  background:#111;color:#888;border-radius:2px;
+}
+.ach-badge.unlocked{border-color:#ff4500;color:#ff4500}
+
+/* TOAST */
+.toast-container{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%);
+  width:90%;max-width:380px;z-index:9999;
+  display:flex;flex-direction:column;gap:8px;
+  pointer-events:none;
+}
+.toast{
+  background:#ff4500;color:#fff;padding:12px 16px;
+  font-weight:900;font-size:0.85rem;text-align:center;
+  font-family:'Courier New',monospace;letter-spacing:1px;
+  animation:toast-in 0.3s ease forwards;
+  pointer-events:auto;
+}
+.toast.removing{animation:toast-out 0.3s ease forwards}
+
+/* BEER RAIN */
+.beer-rain{
+  position:fixed;pointer-events:none;font-size:1.8rem;
+  animation:beer-fall 1.8s ease-in forwards;z-index:100;
+}
+
+/* CONFETTI */
+.confetti-particle{
+  position:fixed;width:8px;height:8px;pointer-events:none;
+  animation:confetti-fall 2s ease-in forwards;z-index:100;
+}
+
+/* EMPTY STATE */
+.empty-state{color:#333;font-size:0.75rem;text-align:center;padding:20px;letter-spacing:2px}
+
+/* CALL 911 MODE */
+body.call911{animation:call911 0.5s infinite}
+body.call911 #app{animation:shake 0.3s infinite}
+
+/* SCREEN SHAKE */
+.screen-shake{animation:shake 0.4s ease}
+.screen-flash{animation:flash 0.2s ease}
+
+/* FOOTER */
+.footer{text-align:center;padding:40px 0 20px;color:#222;font-size:0.6rem;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hero">
+    <div class="title">Blake's Damage Report</div>
+    <div class="subtitle">Session Tracker</div>
+  </div>
+
+  <div class="timer-section">
+    <div class="timer-display" id="timerDisplay">00:00:00</div>
+    <button class="timer-btn" id="timerBtn" onclick="toggleSession()">Start Session</button>
+  </div>
+
+  <div class="status-section">
+    <span class="status-badge" id="statusBadge">Sober &amp; Curious</span>
+  </div>
+
+  <div class="beer-section">
+    <div class="beer-label">Beers Consumed</div>
+    <div class="beer-controls">
+      <button class="beer-btn" id="minusBtn" onclick="changeBeer(-1)" disabled>-</button>
+      <div>
+        <div class="beer-count" id="beerCount">0</div>
+        <div class="beer-emoji" id="beerEmoji"></div>
+      </div>
+      <button class="beer-btn" id="plusBtn" onclick="changeBeer(1)">+</button>
+    </div>
+  </div>
+
+  <div class="section-header">All-Time Stats</div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-value" id="statHours">0</div><div class="stat-label">Total Hours</div></div>
+    <div class="stat-card"><div class="stat-value" id="statBeers">0</div><div class="stat-label">Total Beers</div></div>
+    <div class="stat-card"><div class="stat-value" id="statAvg">0.0</div><div class="stat-label">Avg Beers/Hr</div></div>
+    <div class="stat-card"><div class="stat-value" id="statRecord">0</div><div class="stat-label">Record Beers</div></div>
+  </div>
+
+  <div class="section-header">Achievements</div>
+  <div class="achievements-list" id="achievementsList"></div>
+
+  <div class="section-header">Session History</div>
+  <div class="history-list" id="historyList">
+    <div class="empty-state">No sessions yet. Start one above.</div>
+  </div>
+
+  <div class="footer">Built for Blake. God help us all.</div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ========== STATE ==========
+let sessionActive = false;
+let sessionStart = null;
+let beers = 0;
+let timerInterval = null;
+let tickInterval = null;
+let statusInterval = null;
+let call911Interval = null;
+let audioCtx = null;
+
+const ACHIEVEMENTS = [
+  { id: 'first_blood', name: 'First Blood', icon: '\u{1F37A}', desc: '1 beer consumed' },
+  { id: 'founding_father', name: 'Founding Father', icon: '\u{1F1FA}\u{1F1F8}', desc: '5 beers consumed' },
+  { id: 'full_patriot', name: 'Full Patriot', icon: '\u{1F985}', desc: '10 beers consumed' },
+  { id: 'rabbit_hole', name: 'Down the Rabbit Hole', icon: '\u23F1\uFE0F', desc: '2 hours watched' },
+  { id: 'no_life', name: 'No Life', icon: '\u{1F319}', desc: '4 hours watched' },
+  { id: 'efficiency', name: 'Efficiency Expert', icon: '\u{1F4CA}', desc: '5+ beers/hr' },
+  { id: 'personal_record', name: 'Personal Record', icon: '\u{1F3C6}', desc: 'Beat previous best' },
+];
+
+// ========== AUDIO ==========
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playEagleScreech() {
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(3200, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.3);
+  gain.gain.setValueAtTime(0.15, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.35);
+  // add noise burst
+  const buf = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
+  const noise = ctx.createBufferSource();
+  const nGain = ctx.createGain();
+  noise.buffer = buf;
+  noise.connect(nGain);
+  nGain.connect(ctx.destination);
+  nGain.gain.setValueAtTime(0.08, ctx.currentTime);
+  nGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+  noise.start(ctx.currentTime);
+}
+
+function playSadBell() {
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(220, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(160, ctx.currentTime + 0.8);
+  gain.gain.setValueAtTime(0.12, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.8);
+}
+
+function playAirHorn() {
+  const ctx = getAudioCtx();
+  const freqs = [440, 554, 659];
+  freqs.forEach(f => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(f, ctx.currentTime);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime + 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.8);
+  });
+}
+
+function playSadTrombone() {
+  const ctx = getAudioCtx();
+  const notes = [392, 370, 349, 311];
+  notes.forEach((f, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(f, ctx.currentTime + i * 0.35);
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.35);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.35 + 0.33);
+    osc.start(ctx.currentTime + i * 0.35);
+    osc.stop(ctx.currentTime + i * 0.35 + 0.35);
+  });
+}
+
+function playUSAChant() {
+  const ctx = getAudioCtx();
+  // "U-S-A" rhythm: 3 hits, pause, 3 hits
+  const times = [0, 0.2, 0.4, 0.8, 1.0, 1.2];
+  times.forEach(t => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(330, ctx.currentTime + t);
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime + t);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.12);
+    osc.start(ctx.currentTime + t);
+    osc.stop(ctx.currentTime + t + 0.15);
+  });
+}
+
+function playBigAirHorn() {
+  const ctx = getAudioCtx();
+  const freqs = [440, 554, 659, 880];
+  freqs.forEach(f => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(f, ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime + 1.0);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 1.3);
+  });
+}
+
+function playFanfare() {
+  const ctx = getAudioCtx();
+  const notes = [523, 659, 784];
+  notes.forEach((f, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(f, ctx.currentTime + i * 0.15);
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.15);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.3);
+    osc.start(ctx.currentTime + i * 0.15);
+    osc.stop(ctx.currentTime + i * 0.15 + 0.35);
+  });
+}
+
+function playTick() {
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(800, ctx.currentTime);
+  gain.gain.setValueAtTime(0.015, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.03);
+}
+
+// ========== VISUALS ==========
+function spawnBeerRain() {
+  for (let i = 0; i < 8; i++) {
+    const el = document.createElement('div');
+    el.className = 'beer-rain';
+    el.textContent = '\u{1F37A}';
+    el.style.left = (Math.random() * 90 + 5) + '%';
+    el.style.top = '-40px';
+    el.style.animationDuration = (1.2 + Math.random() * 1.2) + 's';
+    el.style.animationDelay = (Math.random() * 0.3) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+}
+
+function spawnConfetti() {
+  const colors = ['#ff4500', '#fff', '#ff6b35', '#ffd700', '#ff0000', '#00ff00', '#0088ff'];
+  for (let i = 0; i < 40; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-particle';
+    el.style.left = (Math.random() * 100) + '%';
+    el.style.top = '-10px';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.width = (4 + Math.random() * 8) + 'px';
+    el.style.height = (4 + Math.random() * 8) + 'px';
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+    el.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+    el.style.animationDelay = (Math.random() * 0.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+
+function screenShake() {
+  document.getElementById('app').classList.add('screen-shake');
+  setTimeout(() => document.getElementById('app').classList.remove('screen-shake'), 400);
+}
+
+function screenFlash() {
+  document.body.classList.add('screen-flash');
+  setTimeout(() => document.body.classList.remove('screen-flash'), 200);
+}
+
+function updateDrunkEffects() {
+  const app = document.getElementById('app');
+  const timer = document.getElementById('timerDisplay');
+  const maxTilt = 8;
+  const tiltDeg = Math.min(beers / 12, 1) * maxTilt * (Math.random() > 0.5 ? 1 : -1);
+  app.style.transform = beers > 0 ? 'rotate(' + tiltDeg.toFixed(2) + 'deg)' : 'rotate(0deg)';
+
+  // blur
+  const blur = Math.min(beers * 0.3, 4);
+  timer.style.filter = blur > 0 ? 'blur(' + blur.toFixed(1) + 'px)' : 'none';
+
+  // background color
+  const hrs = getElapsedHours();
+  const bph = hrs > 0 ? beers / hrs : 0;
+  if (bph <= 0.5) {
+    document.body.style.backgroundColor = '#0a0a0a';
+  } else if (bph <= 2) {
+    const t = (bph - 0.5) / 1.5;
+    document.body.style.backgroundColor = lerpColor('#0a0a0a', '#2a1500', t);
+  } else if (bph <= 4) {
+    const t = (bph - 2) / 2;
+    document.body.style.backgroundColor = lerpColor('#2a1500', '#3a0a00', t);
+  } else {
+    const t = Math.min((bph - 4) / 3, 1);
+    document.body.style.backgroundColor = lerpColor('#3a0a00', '#500000', t);
+  }
+
+  // beer emoji display
+  const emojiEl = document.getElementById('beerEmoji');
+  emojiEl.textContent = '\u{1F37A}'.repeat(Math.min(beers, 15));
+}
+
+function lerpColor(a, b, t) {
+  const ar = parseInt(a.slice(1, 3), 16), ag = parseInt(a.slice(3, 5), 16), ab = parseInt(a.slice(5, 7), 16);
+  const br = parseInt(b.slice(1, 3), 16), bg = parseInt(b.slice(3, 5), 16), bb = parseInt(b.slice(5, 7), 16);
+  const rr = Math.round(ar + (br - ar) * t);
+  const rg = Math.round(ag + (bg - ag) * t);
+  const rb = Math.round(ab + (bb - ab) * t);
+  return '#' + [rr, rg, rb].map(c => c.toString(16).padStart(2, '0')).join('');
+}
+
+// ========== STATUS ==========
+function updateStatus() {
+  const badge = document.getElementById('statusBadge');
+  const hrs = getElapsedHours();
+  const bph = hrs > 0 ? beers / hrs : (beers > 0 ? beers * 60 : 0); // if < 1 min, estimate
+
+  let text, color;
+  if (beers === 0 && !sessionActive) {
+    text = 'Sober & Curious'; color = '#ffffff';
+  } else if (bph < 1) {
+    text = 'Sober & Curious'; color = '#ffffff';
+  } else if (bph < 2) {
+    text = 'Feeling Patriotic'; color = '#ffd700';
+  } else if (bph < 4) {
+    text = 'Full Send'; color = '#ff8c00';
+  } else if (bph < 6) {
+    text = 'Send Help'; color = '#ff0000';
+  } else {
+    text = 'CALL 911'; color = '#ff0000';
+  }
+
+  badge.textContent = text;
+  badge.style.color = color;
+  badge.style.borderColor = color;
+
+  // CALL 911 mode
+  if (text === 'CALL 911') {
+    badge.style.animation = 'status-flash 0.5s infinite';
+    if (!call911Interval) {
+      call911Interval = setInterval(() => {
+        document.body.classList.add('call911');
+      }, 100);
+      document.body.classList.add('call911');
+    }
+  } else {
+    badge.style.animation = 'none';
+    if (call911Interval) {
+      clearInterval(call911Interval);
+      call911Interval = null;
+      document.body.classList.remove('call911');
+    }
+  }
+}
+
+// ========== TOAST ==========
+function showToast(msg) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ========== ACHIEVEMENTS ==========
+function getUnlockedAchievements() {
+  try { return JSON.parse(localStorage.getItem('blakeAchievements')) || []; }
+  catch { return []; }
+}
+function saveAchievement(id) {
+  const unlocked = getUnlockedAchievements();
+  if (!unlocked.includes(id)) {
+    unlocked.push(id);
+    localStorage.setItem('blakeAchievements', JSON.stringify(unlocked));
+  }
+}
+function checkAchievements() {
+  const unlocked = getUnlockedAchievements();
+  const hrs = getElapsedHours();
+  const bph = hrs > 0 ? beers / hrs : 0;
+  const record = getRecord();
+
+  const checks = [
+    { id: 'first_blood', cond: beers >= 1 },
+    { id: 'founding_father', cond: beers >= 5 },
+    { id: 'full_patriot', cond: beers >= 10 },
+    { id: 'rabbit_hole', cond: hrs >= 2 },
+    { id: 'no_life', cond: hrs >= 4 },
+    { id: 'efficiency', cond: bph >= 5 && hrs >= 0.05 },
+    { id: 'personal_record', cond: beers > record && beers > 0 && record > 0 },
+  ];
+
+  checks.forEach(ch => {
+    if (ch.cond && !unlocked.includes(ch.id)) {
+      const ach = ACHIEVEMENTS.find(a => a.id === ch.id);
+      saveAchievement(ch.id);
+      showToast(ach.icon + ' ' + ach.name + ' unlocked!');
+      playFanfare();
+      spawnConfetti();
+    }
+  });
+  renderAchievements();
+}
+
+function renderAchievements() {
+  const unlocked = getUnlockedAchievements();
+  const container = document.getElementById('achievementsList');
+  container.innerHTML = ACHIEVEMENTS.map(a => {
+    const isUnlocked = unlocked.includes(a.id);
+    return '<span class="ach-badge ' + (isUnlocked ? 'unlocked' : '') + '" title="' + a.desc + '">' +
+      a.icon + ' ' + a.name + '</span>';
+  }).join('');
+}
+
+// ========== DATA ==========
+function getSessions() {
+  try { return JSON.parse(localStorage.getItem('blakeSessions')) || []; }
+  catch { return []; }
+}
+function saveSessions(s) { localStorage.setItem('blakeSessions', JSON.stringify(s)); }
+function getRecord() {
+  try { return parseInt(localStorage.getItem('blakeRecord')) || 0; }
+  catch { return 0; }
+}
+function saveRecord(r) { localStorage.setItem('blakeRecord', JSON.stringify(r)); }
+
+function getElapsedMs() {
+  if (!sessionStart) return 0;
+  return Date.now() - sessionStart;
+}
+function getElapsedHours() {
+  return getElapsedMs() / 3600000;
+}
+function formatTime(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+// ========== TIMER ==========
+function toggleSession() {
+  if (!sessionActive) {
+    startSession();
+  } else {
+    endSession();
+  }
+}
+
+function startSession() {
+  sessionActive = true;
+  sessionStart = Date.now();
+  beers = 0;
+  document.getElementById('beerCount').textContent = '0';
+  document.getElementById('timerBtn').textContent = 'End Session';
+  document.getElementById('timerBtn').classList.add('stop');
+  document.getElementById('minusBtn').disabled = true;
+  updateDrunkEffects();
+
+  playAirHorn();
+
+  timerInterval = setInterval(() => {
+    document.getElementById('timerDisplay').textContent = formatTime(getElapsedMs());
+    checkAchievements();
+  }, 1000);
+
+  tickInterval = setInterval(() => {
+    if (sessionActive) playTick();
+  }, 1000);
+
+  statusInterval = setInterval(updateStatus, 30000);
+  updateStatus();
+}
+
+function endSession() {
+  if (!sessionActive) return;
+  sessionActive = false;
+  const elapsed = getElapsedMs();
+  const hrs = elapsed / 3600000;
+  const bph = hrs > 0 ? (beers / hrs).toFixed(2) : '0.00';
+
+  clearInterval(timerInterval);
+  clearInterval(tickInterval);
+  clearInterval(statusInterval);
+  timerInterval = null;
+  tickInterval = null;
+  statusInterval = null;
+
+  playSadTrombone();
+
+  // save session
+  const session = {
+    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    duration: formatTime(elapsed),
+    durationMs: elapsed,
+    beers: beers,
+    bph: parseFloat(bph),
+  };
+  const sessions = getSessions();
+  sessions.unshift(session);
+  saveSessions(sessions);
+
+  // update record
+  if (beers > getRecord()) {
+    saveRecord(beers);
+  }
+
+  // reset UI
+  document.getElementById('timerBtn').textContent = 'Start Session';
+  document.getElementById('timerBtn').classList.remove('stop');
+
+  // clear drunk effects
+  document.getElementById('app').style.transform = 'rotate(0deg)';
+  document.getElementById('timerDisplay').style.filter = 'none';
+  document.body.style.backgroundColor = '#0a0a0a';
+  document.body.classList.remove('call911');
+  if (call911Interval) { clearInterval(call911Interval); call911Interval = null; }
+
+  updateStats();
+  renderHistory();
+  updateStatus();
+}
+
+// ========== BEER ==========
+function changeBeer(delta) {
+  if (!sessionActive) return;
+  beers = Math.max(0, beers + delta);
+  document.getElementById('beerCount').textContent = beers;
+  document.getElementById('minusBtn').disabled = beers <= 0;
+
+  if (delta > 0) {
+    playEagleScreech();
+    spawnBeerRain();
+    // pulse the + button
+    const plusBtn = document.getElementById('plusBtn');
+    plusBtn.classList.remove('plus-pulse');
+    void plusBtn.offsetWidth; // reflow
+    plusBtn.classList.add('plus-pulse');
+
+    // milestones
+    if (beers === 5) { playUSAChant(); showToast('\u{1F1FA}\u{1F1F8} USA! USA! USA! \u{1F1FA}\u{1F1F8}'); }
+    if (beers === 10) {
+      playBigAirHorn();
+      screenShake();
+      screenFlash();
+      showToast('\u{1F4A5} 10 BEERS. ABSOLUTE UNIT. \u{1F4A5}');
+    }
+  } else {
+    playSadBell();
+  }
+
+  updateDrunkEffects();
+  updateStatus();
+  checkAchievements();
+}
+
+// ========== STATS ==========
+function updateStats() {
+  const sessions = getSessions();
+  let totalMs = 0, totalBeers = 0;
+  sessions.forEach(s => {
+    totalMs += s.durationMs || 0;
+    totalBeers += s.beers || 0;
+  });
+  const totalHrs = totalMs / 3600000;
+  const avgBph = totalHrs > 0 ? (totalBeers / totalHrs).toFixed(1) : '0.0';
+
+  document.getElementById('statHours').textContent = totalHrs.toFixed(1);
+  document.getElementById('statBeers').textContent = totalBeers;
+  document.getElementById('statAvg').textContent = avgBph;
+  document.getElementById('statRecord').textContent = getRecord();
+}
+
+// ========== HISTORY ==========
+function renderHistory() {
+  const sessions = getSessions();
+  const container = document.getElementById('historyList');
+  if (sessions.length === 0) {
+    container.innerHTML = '<div class="empty-state">No sessions yet. Start one above.</div>';
+    return;
+  }
+  container.innerHTML = sessions.map(s => {
+    const scoreLabel = s.bph < 2 ? 'Casual' : s.bph < 4 ? 'Committed' : s.bph < 6 ? 'Dangerous' : 'LEGENDARY';
+    return '<div class="history-card">' +
+      '<div class="hc-date">' + s.date + '</div>' +
+      '<div><div class="hc-val">' + s.duration + '</div><div class="hc-lbl">Duration</div></div>' +
+      '<div><div class="hc-val">' + s.beers + ' \u{1F37A}</div><div class="hc-lbl">Beers</div></div>' +
+      '<div><div class="hc-val hc-score">' + s.bph.toFixed(1) + '/hr</div><div class="hc-lbl">Rate</div></div>' +
+      '<div><div class="hc-val hc-score">' + scoreLabel + '</div><div class="hc-lbl">Verdict</div></div>' +
+      '</div>';
+  }).join('');
+}
+
+// ========== INIT ==========
+function init() {
+  updateStats();
+  renderHistory();
+  renderAchievements();
+  updateStatus();
+}
+init();
+</script>
+</body>
+</html>
