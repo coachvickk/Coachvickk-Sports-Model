@@ -5,140 +5,347 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Blake's Damage Report</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ff4500">
+<meta name="theme-color" content="#0a0a12">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Damage Report">
 <link rel="apple-touch-icon" href="icon-192.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-@keyframes pulse-glow{0%{box-shadow:0 0 8px #ff4500}50%{box-shadow:0 0 25px #ff4500,0 0 50px #ff450066}100%{box-shadow:0 0 8px #ff4500}}
-@keyframes toast-in{0%{transform:translateY(-100%);opacity:0}100%{transform:translateY(0);opacity:1}}
-@keyframes toast-out{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-100%);opacity:0}}
-@keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-4px)}20%,40%,60%,80%{transform:translateX(4px)}}
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulse-glow{0%{box-shadow:0 0 8px var(--accent)}50%{box-shadow:0 0 25px var(--accent),0 0 50px rgba(255,107,53,0.3)}100%{box-shadow:0 0 8px var(--accent)}}
+@keyframes toast-in{0%{transform:translateX(100%);opacity:0}100%{transform:translateX(0);opacity:1}}
+@keyframes toast-out{0%{transform:translateX(0);opacity:1}100%{transform:translateX(100%);opacity:0}}
 @keyframes flash{0%{opacity:1}50%{opacity:0.3}100%{opacity:1}}
 @keyframes beer-fall{0%{transform:translateY(-40px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(360deg);opacity:0}}
 @keyframes confetti-fall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
-@keyframes call911{0%,100%{background:#ff0000}50%{background:#0a0a0a}}
+@keyframes call911{0%,100%{background:#ff0000}50%{background:var(--bg)}}
 @keyframes status-flash{0%,100%{opacity:1}50%{opacity:0.4}}
-@keyframes btn-pulse{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes btn-pulse{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes fadeInUp{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes flicker{0%,100%{opacity:1}92%{opacity:1}93%{opacity:0.3}94%{opacity:1}97%{opacity:0.5}98%{opacity:1}}
+@keyframes scanMove{0%{top:-50%}100%{top:100%}}
+@keyframes glitchText{0%{text-shadow:0 0 20px var(--neon),0 0 60px var(--neon)}50%{text-shadow:0 0 40px var(--neon),0 0 80px var(--neon),3px 0 #f0f,−3px 0 #0ff}100%{text-shadow:0 0 20px var(--neon),0 0 60px var(--neon)}}
+@keyframes cardStagger{0%{opacity:0;transform:translateY(40px) scale(0.9)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes selectFlash{0%{box-shadow:0 0 0 0 var(--beer-color)}50%{box-shadow:0 0 40px 10px var(--beer-color)}100%{box-shadow:0 0 60px 20px var(--beer-color)}}
+@keyframes countPop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* ===== CSS VARIABLES ===== */
+:root{
+  --bg:#0a0a12;
+  --bg-card:rgba(255,255,255,0.03);
+  --bg-card-hover:rgba(255,255,255,0.06);
+  --border:rgba(255,255,255,0.06);
+  --border-hover:rgba(255,255,255,0.12);
+  --text:#ffffff;
+  --text-muted:#6b6b80;
+  --text-dim:#3a3a4a;
+  --accent:#ff6b35;
+  --accent2:#ff3366;
+  --gradient:linear-gradient(135deg,#ff6b35,#ff3366);
+  --neon:#ff6b35;
+  --radius:16px;
+  --radius-sm:10px;
+}
 
 html{font-size:16px}
 body{
-  background:#0a0a0a;color:#fff;font-family:'Courier New',monospace;
+  background:var(--bg);color:var(--text);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   min-height:100vh;display:flex;justify-content:center;
   overflow-x:hidden;transition:background-color 0.8s ease;
-}
-#app{
-  width:100%;max-width:420px;padding:16px;padding-bottom:80px;
-  transition:transform 0.5s ease;transform-origin:center top;
+  -webkit-font-smoothing:antialiased;
 }
 
-/* HERO SECTION */
-.hero{text-align:center;padding:20px 0 10px}
-.title{
-  font-size:1.6rem;font-weight:900;text-transform:uppercase;
-  letter-spacing:2px;color:#ff4500;margin-bottom:4px;
+/* ===== WARRIOR OVERLAY ===== */
+.warrior-overlay{
+  position:fixed;inset:0;z-index:10000;
+  background:#0a0a0f;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;visibility:hidden;
+  transition:opacity 0.4s ease,visibility 0.4s ease;
+  overflow-y:auto;
 }
-.subtitle{font-size:0.7rem;color:#666;letter-spacing:4px;text-transform:uppercase}
+.warrior-overlay.visible{opacity:1;visibility:visible}
+.warrior-overlay.closing{opacity:0;transform:scale(1.05);transition:all 0.5s ease}
+
+/* CRT scanlines */
+.warrior-overlay::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:1;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);
+}
+/* Moving scan line */
+.warrior-overlay::before{
+  content:'';position:fixed;left:0;right:0;height:80px;z-index:2;
+  background:linear-gradient(180deg,transparent,rgba(255,107,53,0.03),transparent);
+  animation:scanMove 4s linear infinite;pointer-events:none;
+}
+
+.warrior-content{
+  width:100%;max-width:420px;padding:40px 20px;position:relative;z-index:3;
+  text-align:center;
+}
+.warrior-back{
+  position:absolute;top:16px;right:16px;
+  background:none;border:1px solid rgba(255,255,255,0.15);
+  color:#888;font-size:0.75rem;padding:6px 14px;border-radius:20px;
+  cursor:pointer;font-family:'Inter',sans-serif;z-index:4;
+  transition:all 0.2s;
+}
+.warrior-back:hover{color:#fff;border-color:rgba(255,255,255,0.4)}
+.warrior-pretitle{
+  font-family:'Press Start 2P',monospace;font-size:0.55rem;
+  color:var(--accent);letter-spacing:3px;margin-bottom:16px;
+  animation:flicker 3s infinite;
+}
+.warrior-title{
+  font-family:'Press Start 2P',monospace;font-size:1.1rem;
+  color:#fff;line-height:1.6;margin-bottom:8px;
+  text-shadow:0 0 20px var(--neon),0 0 60px rgba(255,107,53,0.4);
+  animation:glitchText 4s ease infinite;
+}
+.warrior-subtitle{
+  font-size:0.8rem;color:var(--text-muted);margin-bottom:32px;
+  font-weight:400;
+}
+.warrior-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  margin-bottom:24px;
+}
+.warrior-card{
+  --beer-color:#ff6b35;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px;padding:20px 10px 16px;
+  cursor:pointer;transition:all 0.3s ease;
+  position:relative;overflow:hidden;
+  animation:cardStagger 0.5s ease both;
+}
+.warrior-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--beer-color);opacity:0;transition:opacity 0.3s;
+}
+.warrior-card:hover{
+  border-color:var(--beer-color);
+  background:rgba(255,255,255,0.06);
+  transform:translateY(-2px);
+  box-shadow:0 8px 30px rgba(0,0,0,0.4),0 0 20px color-mix(in srgb,var(--beer-color) 20%,transparent);
+}
+.warrior-card:hover::before{opacity:1}
+.warrior-card:active{transform:scale(0.97)}
+.warrior-card.selected{
+  border-color:var(--beer-color);
+  animation:selectFlash 0.6s ease forwards;
+}
+.warrior-emoji{font-size:2rem;margin-bottom:8px}
+.warrior-name{font-weight:700;font-size:0.8rem;color:#fff;margin-bottom:4px}
+.warrior-tagline{font-size:0.65rem;color:var(--text-muted);font-style:italic}
+.warrior-flash{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.85);opacity:0;
+  transition:opacity 0.2s;pointer-events:none;
+}
+.warrior-flash.visible{opacity:1}
+.warrior-flash-text{
+  font-family:'Press Start 2P',monospace;font-size:1.4rem;
+  color:#fff;text-shadow:0 0 30px var(--neon),0 0 60px var(--neon);
+}
+
+/* ===== MAIN APP ===== */
+#app{
+  width:100%;max-width:440px;padding:20px 20px 100px;
+  transform-origin:center top;
+}
+
+/* HERO */
+.hero{text-align:center;padding:24px 0 8px}
+.title{
+  font-size:1.5rem;font-weight:900;text-transform:uppercase;
+  letter-spacing:1px;line-height:1.2;
+  background:var(--gradient);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.subtitle{
+  font-size:0.65rem;color:var(--text-muted);letter-spacing:5px;
+  text-transform:uppercase;margin-top:6px;font-weight:600;
+}
 
 /* TIMER */
-.timer-section{text-align:center;padding:24px 0 8px}
+.timer-section{text-align:center;padding:28px 0 8px}
 .timer-display{
-  font-size:4.5rem;font-weight:900;letter-spacing:4px;
-  color:#fff;font-family:'Courier New',monospace;
-  line-height:1;margin-bottom:12px;
+  font-size:4rem;font-weight:900;letter-spacing:2px;
+  color:#fff;line-height:1;margin-bottom:6px;
+  font-variant-numeric:tabular-nums;
   transition:filter 0.5s ease;
 }
-.timer-btn{
-  background:#ff4500;color:#fff;border:none;
-  font-size:1.1rem;font-weight:900;text-transform:uppercase;
-  padding:14px 40px;cursor:pointer;letter-spacing:2px;
-  font-family:'Courier New',monospace;
-  border:3px solid #ff4500;transition:all 0.2s;
+.selected-beer-display{
+  font-size:0.75rem;color:var(--text-muted);margin-bottom:16px;
+  font-weight:600;letter-spacing:1px;min-height:20px;
 }
-.timer-btn:hover{background:#fff;color:#ff4500}
-.timer-btn.stop{background:transparent;border-color:#ff4500;color:#ff4500}
-.timer-btn.stop:hover{background:#ff4500;color:#fff}
+.selected-beer-display span{
+  background:var(--gradient);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;font-weight:700;
+}
+.timer-btn{
+  background:var(--gradient);color:#fff;border:none;
+  font-size:0.9rem;font-weight:700;text-transform:uppercase;
+  padding:14px 44px;cursor:pointer;letter-spacing:2px;
+  font-family:'Inter',sans-serif;border-radius:50px;
+  transition:all 0.3s;position:relative;overflow:hidden;
+  box-shadow:0 4px 20px rgba(255,107,53,0.3);
+}
+.timer-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 6px 30px rgba(255,107,53,0.4);
+}
+.timer-btn:active{transform:scale(0.97)}
+.timer-btn.stop{
+  background:transparent;
+  border:2px solid rgba(255,107,53,0.4);
+  box-shadow:none;
+}
+.timer-btn.stop:hover{
+  border-color:var(--accent);
+  box-shadow:0 4px 20px rgba(255,107,53,0.2);
+}
 
 /* STATUS BADGE */
-.status-section{text-align:center;padding:12px 0}
+.status-section{text-align:center;padding:16px 0}
 .status-badge{
-  display:inline-block;padding:6px 20px;border-radius:50px;
-  font-size:0.8rem;font-weight:900;letter-spacing:1px;
+  display:inline-block;padding:8px 24px;border-radius:50px;
+  font-size:0.7rem;font-weight:700;letter-spacing:2px;
   text-transform:uppercase;transition:all 0.5s ease;
-  border:2px solid;
+  border:1px solid;
+  background:rgba(255,255,255,0.03);
 }
 
 /* BEER COUNTER */
-.beer-section{text-align:center;padding:16px 0}
-.beer-label{font-size:0.7rem;color:#666;letter-spacing:4px;text-transform:uppercase;margin-bottom:8px}
-.beer-controls{display:flex;align-items:center;justify-content:center;gap:16px}
+.beer-section{
+  text-align:center;padding:24px 0;
+  background:var(--bg-card);border-radius:var(--radius);
+  border:1px solid var(--border);margin:8px 0;
+}
+.beer-label{
+  font-size:0.6rem;color:var(--text-muted);letter-spacing:4px;
+  text-transform:uppercase;margin-bottom:16px;font-weight:700;
+}
+.beer-controls{display:flex;align-items:center;justify-content:center;gap:24px}
 .beer-btn{
-  width:64px;height:64px;border-radius:50%;border:3px solid #ff4500;
-  background:transparent;color:#ff4500;font-size:2rem;
-  font-weight:900;cursor:pointer;font-family:'Courier New',monospace;
+  width:56px;height:56px;border-radius:50%;
+  border:2px solid rgba(255,107,53,0.3);
+  background:rgba(255,107,53,0.06);color:var(--accent);
+  font-size:1.6rem;font-weight:700;cursor:pointer;
+  font-family:'Inter',sans-serif;
   display:flex;align-items:center;justify-content:center;
-  transition:all 0.2s;line-height:1;
+  transition:all 0.3s;line-height:1;
 }
-.beer-btn:hover{background:#ff4500;color:#fff}
-.beer-btn:disabled{opacity:0.3;cursor:not-allowed}
-.beer-btn.plus-pulse{animation:btn-pulse 0.3s ease, pulse-glow 0.6s ease}
+.beer-btn:hover{
+  background:rgba(255,107,53,0.15);border-color:var(--accent);
+  box-shadow:0 0 20px rgba(255,107,53,0.2);
+}
+.beer-btn:active{transform:scale(0.92)}
+.beer-btn:disabled{opacity:0.2;cursor:not-allowed;box-shadow:none}
+.beer-btn.plus-pulse{animation:btn-pulse 0.3s ease,pulse-glow 0.6s ease}
+.beer-count-wrap{min-width:100px;text-align:center}
 .beer-count{
-  font-size:5rem;font-weight:900;color:#fff;
-  min-width:100px;text-align:center;line-height:1;
+  font-size:5rem;font-weight:900;line-height:1;
+  background:var(--gradient);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  transition:transform 0.2s;
 }
-.beer-emoji{font-size:0.9rem;color:#666;margin-top:4px}
+.beer-count.pop{animation:countPop 0.25s ease}
+.beer-emoji{font-size:0.85rem;color:var(--text-dim);margin-top:6px;letter-spacing:2px}
 
 /* SECTION HEADERS */
 .section-header{
-  font-size:0.75rem;color:#ff4500;letter-spacing:4px;
-  text-transform:uppercase;font-weight:900;
-  padding:24px 0 12px;border-top:2px solid #222;
-  margin-top:16px;
+  font-size:0.6rem;color:var(--text-muted);letter-spacing:4px;
+  text-transform:uppercase;font-weight:700;
+  padding:28px 0 14px;
 }
 
 /* STATS */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stat-card{
-  border:2px solid #333;padding:12px;text-align:center;
-  background:#111;
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px 12px;text-align:center;
+  transition:all 0.3s;
 }
-.stat-value{font-size:1.6rem;font-weight:900;color:#ff4500}
-.stat-label{font-size:0.6rem;color:#666;letter-spacing:2px;text-transform:uppercase;margin-top:4px}
-
-/* HISTORY */
-.history-list{display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto}
-.history-card{
-  border:3px solid #fff;padding:12px;background:#0a0a0a;
-  display:grid;grid-template-columns:1fr 1fr;gap:4px;
+.stat-card:hover{border-color:var(--border-hover);background:var(--bg-card-hover)}
+.stat-value{
+  font-size:1.5rem;font-weight:900;
+  background:var(--gradient);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
 }
-.history-card .hc-date{grid-column:1/-1;font-size:0.65rem;color:#666;letter-spacing:1px}
-.history-card .hc-val{font-size:1.1rem;font-weight:900}
-.history-card .hc-lbl{font-size:0.55rem;color:#888;text-transform:uppercase;letter-spacing:1px}
-.history-card .hc-score{color:#ff4500}
+.stat-label{
+  font-size:0.55rem;color:var(--text-muted);letter-spacing:2px;
+  text-transform:uppercase;margin-top:6px;font-weight:600;
+}
 
 /* ACHIEVEMENTS */
-.achievements-list{display:flex;flex-wrap:wrap;gap:6px}
+.achievements-list{display:flex;flex-wrap:wrap;gap:8px}
 .ach-badge{
-  padding:4px 10px;border:1px solid #333;font-size:0.65rem;
-  background:#111;color:#888;border-radius:2px;
+  padding:6px 14px;border:1px solid var(--border);
+  font-size:0.65rem;font-weight:600;
+  background:var(--bg-card);color:var(--text-muted);border-radius:50px;
+  transition:all 0.3s;
 }
-.ach-badge.unlocked{border-color:#ff4500;color:#ff4500}
+.ach-badge.unlocked{
+  border-color:rgba(255,107,53,0.4);color:var(--accent);
+  background:rgba(255,107,53,0.08);
+}
+
+/* HISTORY */
+.history-list{display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto}
+.history-list::-webkit-scrollbar{width:4px}
+.history-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
+.history-card{
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px;background:var(--bg-card);
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  transition:all 0.3s;
+}
+.history-card:hover{border-color:var(--border-hover);background:var(--bg-card-hover)}
+.history-card .hc-date{
+  grid-column:1/-1;font-size:0.6rem;color:var(--text-muted);
+  letter-spacing:1px;font-weight:600;margin-bottom:4px;
+}
+.history-card .hc-beer-type{
+  grid-column:1/-1;font-size:0.6rem;color:var(--accent);
+  font-weight:600;margin-bottom:2px;
+}
+.history-card .hc-val{font-size:1rem;font-weight:800}
+.history-card .hc-lbl{font-size:0.5rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.history-card .hc-score{
+  background:var(--gradient);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
 
 /* TOAST */
 .toast-container{
-  position:fixed;top:16px;left:50%;transform:translateX(-50%);
-  width:90%;max-width:380px;z-index:9999;
+  position:fixed;top:16px;right:16px;
+  width:85%;max-width:340px;z-index:9999;
   display:flex;flex-direction:column;gap:8px;
   pointer-events:none;
 }
 .toast{
-  background:#ff4500;color:#fff;padding:12px 16px;
-  font-weight:900;font-size:0.85rem;text-align:center;
-  font-family:'Courier New',monospace;letter-spacing:1px;
+  background:var(--bg);
+  border:1px solid rgba(255,107,53,0.3);
+  border-left:3px solid var(--accent);
+  color:#fff;padding:14px 18px;border-radius:var(--radius-sm);
+  font-weight:600;font-size:0.8rem;
+  font-family:'Inter',sans-serif;
   animation:toast-in 0.3s ease forwards;
-  pointer-events:auto;
+  pointer-events:auto;backdrop-filter:blur(20px);
+  box-shadow:0 8px 30px rgba(0,0,0,0.4);
 }
 .toast.removing{animation:toast-out 0.3s ease forwards}
 
@@ -155,21 +362,40 @@ body{
 }
 
 /* EMPTY STATE */
-.empty-state{color:#333;font-size:0.75rem;text-align:center;padding:20px;letter-spacing:2px}
+.empty-state{
+  color:var(--text-dim);font-size:0.75rem;text-align:center;
+  padding:30px 20px;letter-spacing:1px;
+}
 
 /* CALL 911 MODE */
 body.call911{animation:call911 0.5s infinite}
-body.call911 #app{animation:shake 0.3s infinite}
-
-/* SCREEN SHAKE */
-.screen-shake{animation:shake 0.4s ease}
-.screen-flash{animation:flash 0.2s ease}
 
 /* FOOTER */
-.footer{text-align:center;padding:40px 0 20px;color:#222;font-size:0.6rem;letter-spacing:2px}
+.footer{
+  text-align:center;padding:40px 0 20px;
+  color:var(--text-dim);font-size:0.6rem;letter-spacing:2px;font-weight:600;
+}
 </style>
 </head>
 <body>
+
+<!-- ===== WARRIOR SELECT OVERLAY ===== -->
+<div id="warriorOverlay" class="warrior-overlay">
+  <button class="warrior-back" onclick="hideWarriorSelect()">&#x2715; Back</button>
+  <div class="warrior-content">
+    <div class="warrior-pretitle">&#9612; INSERT COIN &#9616;</div>
+    <div class="warrior-title">PICK YOUR<br>WARRIOR</div>
+    <div class="warrior-subtitle">Choose your weapon for tonight</div>
+    <div class="warrior-grid" id="warriorGrid"></div>
+  </div>
+</div>
+
+<!-- ===== FLASH TEXT ===== -->
+<div class="warrior-flash" id="warriorFlash">
+  <div class="warrior-flash-text">LET'S GO!</div>
+</div>
+
+<!-- ===== MAIN DASHBOARD ===== -->
 <div id="app">
   <div class="hero">
     <div class="title">Blake's Damage Report</div>
@@ -178,6 +404,7 @@ body.call911 #app{animation:shake 0.3s infinite}
 
   <div class="timer-section">
     <div class="timer-display" id="timerDisplay">00:00:00</div>
+    <div class="selected-beer-display" id="selectedBeerDisplay"></div>
     <button class="timer-btn" id="timerBtn" onclick="toggleSession()">Start Session</button>
   </div>
 
@@ -188,8 +415,8 @@ body.call911 #app{animation:shake 0.3s infinite}
   <div class="beer-section">
     <div class="beer-label">Beers Consumed</div>
     <div class="beer-controls">
-      <button class="beer-btn" id="minusBtn" onclick="changeBeer(-1)" disabled>-</button>
-      <div>
+      <button class="beer-btn" id="minusBtn" onclick="changeBeer(-1)" disabled>&#8722;</button>
+      <div class="beer-count-wrap">
         <div class="beer-count" id="beerCount">0</div>
         <div class="beer-emoji" id="beerEmoji"></div>
       </div>
@@ -219,10 +446,25 @@ body.call911 #app{animation:shake 0.3s infinite}
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
+// ========== BEER OPTIONS ==========
+const BEER_OPTIONS = [
+  { id:'miller-lite', name:'Miller Lite', tagline:'The Lightweight', emoji:'\u{1F37A}', color:'#f5d442' },
+  { id:'summer-shandy', name:'Summer Shandy', tagline:'The Pool Boy', emoji:'\u2600\uFE0F', color:'#ffb347' },
+  { id:'guinness', name:'Guinness', tagline:'The Dark Knight', emoji:'\u{1F3B1}', color:'#c0392b' },
+  { id:'coors-light', name:'Coors Light', tagline:'The Silver Bullet', emoji:'\u{1F3D4}\uFE0F', color:'#a8b8c8' },
+  { id:'blue-moon', name:'Blue Moon', tagline:'The Fancy One', emoji:'\u{1F319}', color:'#4a90d9' },
+  { id:'corona', name:'Corona', tagline:'The Vacationer', emoji:'\u{1F3D6}\uFE0F', color:'#ffd700' },
+  { id:'bud-light', name:'Bud Light', tagline:"The People's Champ", emoji:'\u{1F3C6}', color:'#1e90ff' },
+  { id:'modelo', name:'Modelo', tagline:'The Fighter', emoji:'\u{1F94A}', color:'#d4a017' },
+];
+
 // ========== STATE ==========
 let sessionActive = false;
 let sessionStart = null;
 let beers = 0;
+let selectedBeer = null;
+let shakeIntensity = 3;
+let shakeTimer = null;
 let timerInterval = null;
 let tickInterval = null;
 let statusInterval = null;
@@ -230,553 +472,494 @@ let call911Interval = null;
 let audioCtx = null;
 
 const ACHIEVEMENTS = [
-  { id: 'first_blood', name: 'First Blood', icon: '\u{1F37A}', desc: '1 beer consumed' },
-  { id: 'founding_father', name: 'Founding Father', icon: '\u{1F1FA}\u{1F1F8}', desc: '5 beers consumed' },
-  { id: 'full_patriot', name: 'Full Patriot', icon: '\u{1F985}', desc: '10 beers consumed' },
-  { id: 'rabbit_hole', name: 'Down the Rabbit Hole', icon: '\u23F1\uFE0F', desc: '2 hours watched' },
-  { id: 'no_life', name: 'No Life', icon: '\u{1F319}', desc: '4 hours watched' },
-  { id: 'efficiency', name: 'Efficiency Expert', icon: '\u{1F4CA}', desc: '5+ beers/hr' },
-  { id: 'personal_record', name: 'Personal Record', icon: '\u{1F3C6}', desc: 'Beat previous best' },
+  { id:'first_blood', name:'First Blood', icon:'\u{1F37A}', desc:'1 beer consumed' },
+  { id:'founding_father', name:'Founding Father', icon:'\u{1F1FA}\u{1F1F8}', desc:'5 beers consumed' },
+  { id:'full_patriot', name:'Full Patriot', icon:'\u{1F985}', desc:'10 beers consumed' },
+  { id:'rabbit_hole', name:'Down the Rabbit Hole', icon:'\u23F1\uFE0F', desc:'2 hours watched' },
+  { id:'no_life', name:'No Life', icon:'\u{1F319}', desc:'4 hours watched' },
+  { id:'efficiency', name:'Efficiency Expert', icon:'\u{1F4CA}', desc:'5+ beers/hr' },
+  { id:'personal_record', name:'Personal Record', icon:'\u{1F3C6}', desc:'Beat previous best' },
 ];
 
 // ========== AUDIO ==========
-function getAudioCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+function getAudioCtx(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
   return audioCtx;
 }
 
-function playEagleScreech() {
-  const ctx = getAudioCtx();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(3200, ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.3);
-  gain.gain.setValueAtTime(0.15, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.35);
-  // add noise burst
-  const buf = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
-  const noise = ctx.createBufferSource();
-  const nGain = ctx.createGain();
-  noise.buffer = buf;
-  noise.connect(nGain);
-  nGain.connect(ctx.destination);
-  nGain.gain.setValueAtTime(0.08, ctx.currentTime);
-  nGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+function playEagleScreech(){
+  const ctx=getAudioCtx();
+  const osc=ctx.createOscillator();const gain=ctx.createGain();
+  osc.connect(gain);gain.connect(ctx.destination);
+  osc.type='sawtooth';
+  osc.frequency.setValueAtTime(3200,ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(800,ctx.currentTime+0.3);
+  gain.gain.setValueAtTime(0.15,ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
+  osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.35);
+  const buf=ctx.createBuffer(1,ctx.sampleRate*0.15,ctx.sampleRate);
+  const data=buf.getChannelData(0);
+  for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*0.3;
+  const noise=ctx.createBufferSource();const nGain=ctx.createGain();
+  noise.buffer=buf;noise.connect(nGain);nGain.connect(ctx.destination);
+  nGain.gain.setValueAtTime(0.08,ctx.currentTime);
+  nGain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);
   noise.start(ctx.currentTime);
 }
 
-function playSadBell() {
-  const ctx = getAudioCtx();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(220, ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(160, ctx.currentTime + 0.8);
-  gain.gain.setValueAtTime(0.12, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.8);
+function playSadBell(){
+  const ctx=getAudioCtx();
+  const osc=ctx.createOscillator();const gain=ctx.createGain();
+  osc.connect(gain);gain.connect(ctx.destination);
+  osc.type='sine';
+  osc.frequency.setValueAtTime(220,ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(160,ctx.currentTime+0.8);
+  gain.gain.setValueAtTime(0.12,ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.8);
+  osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.8);
 }
 
-function playAirHorn() {
-  const ctx = getAudioCtx();
-  const freqs = [440, 554, 659];
-  freqs.forEach(f => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(f, ctx.currentTime);
-    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-    gain.gain.setValueAtTime(0.08, ctx.currentTime + 0.6);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.8);
+function playAirHorn(){
+  const ctx=getAudioCtx();
+  [440,554,659].forEach(f=>{
+    const osc=ctx.createOscillator();const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type='square';osc.frequency.setValueAtTime(f,ctx.currentTime);
+    gain.gain.setValueAtTime(0.08,ctx.currentTime);
+    gain.gain.setValueAtTime(0.08,ctx.currentTime+0.6);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.8);
+    osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.8);
   });
 }
 
-function playSadTrombone() {
-  const ctx = getAudioCtx();
-  const notes = [392, 370, 349, 311];
-  notes.forEach((f, i) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(f, ctx.currentTime + i * 0.35);
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.35);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.35 + 0.33);
-    osc.start(ctx.currentTime + i * 0.35);
-    osc.stop(ctx.currentTime + i * 0.35 + 0.35);
+function playSadTrombone(){
+  const ctx=getAudioCtx();
+  [392,370,349,311].forEach((f,i)=>{
+    const osc=ctx.createOscillator();const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type='sawtooth';
+    osc.frequency.setValueAtTime(f,ctx.currentTime+i*0.35);
+    gain.gain.setValueAtTime(0.0001,ctx.currentTime);
+    gain.gain.setValueAtTime(0.1,ctx.currentTime+i*0.35);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.35+0.33);
+    osc.start(ctx.currentTime+i*0.35);osc.stop(ctx.currentTime+i*0.35+0.35);
   });
 }
 
-function playUSAChant() {
-  const ctx = getAudioCtx();
-  // "U-S-A" rhythm: 3 hits, pause, 3 hits
-  const times = [0, 0.2, 0.4, 0.8, 1.0, 1.2];
-  times.forEach(t => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(330, ctx.currentTime + t);
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime + t);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.12);
-    osc.start(ctx.currentTime + t);
-    osc.stop(ctx.currentTime + t + 0.15);
+function playUSAChant(){
+  const ctx=getAudioCtx();
+  [0,0.2,0.4,0.8,1.0,1.2].forEach(t=>{
+    const osc=ctx.createOscillator();const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type='square';osc.frequency.setValueAtTime(330,ctx.currentTime+t);
+    gain.gain.setValueAtTime(0.0001,ctx.currentTime);
+    gain.gain.setValueAtTime(0.1,ctx.currentTime+t);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+0.12);
+    osc.start(ctx.currentTime+t);osc.stop(ctx.currentTime+t+0.15);
   });
 }
 
-function playBigAirHorn() {
-  const ctx = getAudioCtx();
-  const freqs = [440, 554, 659, 880];
-  freqs.forEach(f => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(f, ctx.currentTime);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime + 1.0);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.3);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 1.3);
+function playBigAirHorn(){
+  const ctx=getAudioCtx();
+  [440,554,659,880].forEach(f=>{
+    const osc=ctx.createOscillator();const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type='square';osc.frequency.setValueAtTime(f,ctx.currentTime);
+    gain.gain.setValueAtTime(0.1,ctx.currentTime);
+    gain.gain.setValueAtTime(0.1,ctx.currentTime+1.0);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1.3);
+    osc.start(ctx.currentTime);osc.stop(ctx.currentTime+1.3);
   });
 }
 
-function playFanfare() {
-  const ctx = getAudioCtx();
-  const notes = [523, 659, 784];
-  notes.forEach((f, i) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(f, ctx.currentTime + i * 0.15);
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.15);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.3);
-    osc.start(ctx.currentTime + i * 0.15);
-    osc.stop(ctx.currentTime + i * 0.15 + 0.35);
+function playFanfare(){
+  const ctx=getAudioCtx();
+  [523,659,784].forEach((f,i)=>{
+    const osc=ctx.createOscillator();const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type='triangle';
+    osc.frequency.setValueAtTime(f,ctx.currentTime+i*0.15);
+    gain.gain.setValueAtTime(0.0001,ctx.currentTime);
+    gain.gain.setValueAtTime(0.12,ctx.currentTime+i*0.15);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.15+0.3);
+    osc.start(ctx.currentTime+i*0.15);osc.stop(ctx.currentTime+i*0.15+0.35);
   });
 }
 
-function playTick() {
-  const ctx = getAudioCtx();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(800, ctx.currentTime);
-  gain.gain.setValueAtTime(0.015, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.03);
+function playTick(){
+  const ctx=getAudioCtx();
+  const osc=ctx.createOscillator();const gain=ctx.createGain();
+  osc.connect(gain);gain.connect(ctx.destination);
+  osc.type='sine';osc.frequency.setValueAtTime(800,ctx.currentTime);
+  gain.gain.setValueAtTime(0.015,ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.03);
+  osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.03);
+}
+
+function playArcadeSelect(){
+  const ctx=getAudioCtx();
+  const osc=ctx.createOscillator();const gain=ctx.createGain();
+  osc.connect(gain);gain.connect(ctx.destination);
+  osc.type='square';
+  osc.frequency.setValueAtTime(200,ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(600,ctx.currentTime+0.08);
+  osc.frequency.exponentialRampToValueAtTime(800,ctx.currentTime+0.15);
+  gain.gain.setValueAtTime(0.1,ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.2);
+  osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.2);
+}
+
+function playArcadeConfirm(){
+  const ctx=getAudioCtx();
+  [523,659,784,1047].forEach((f,i)=>{
+    const osc=ctx.createOscillator();const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type='square';
+    osc.frequency.setValueAtTime(f,ctx.currentTime+i*0.08);
+    gain.gain.setValueAtTime(0.0001,ctx.currentTime);
+    gain.gain.setValueAtTime(0.1,ctx.currentTime+i*0.08);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.08+0.12);
+    osc.start(ctx.currentTime+i*0.08);osc.stop(ctx.currentTime+i*0.08+0.15);
+  });
 }
 
 // ========== VISUALS ==========
-function spawnBeerRain() {
-  for (let i = 0; i < 8; i++) {
-    const el = document.createElement('div');
-    el.className = 'beer-rain';
-    el.textContent = '\u{1F37A}';
-    el.style.left = (Math.random() * 90 + 5) + '%';
-    el.style.top = '-40px';
-    el.style.animationDuration = (1.2 + Math.random() * 1.2) + 's';
-    el.style.animationDelay = (Math.random() * 0.3) + 's';
+function spawnBeerRain(){
+  for(let i=0;i<8;i++){
+    const el=document.createElement('div');
+    el.className='beer-rain';el.textContent='\u{1F37A}';
+    el.style.left=(Math.random()*90+5)+'%';
+    el.style.top='-40px';
+    el.style.animationDuration=(1.2+Math.random()*1.2)+'s';
+    el.style.animationDelay=(Math.random()*0.3)+'s';
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3000);
+    setTimeout(()=>el.remove(),3000);
   }
 }
 
-function spawnConfetti() {
-  const colors = ['#ff4500', '#fff', '#ff6b35', '#ffd700', '#ff0000', '#00ff00', '#0088ff'];
-  for (let i = 0; i < 40; i++) {
-    const el = document.createElement('div');
-    el.className = 'confetti-particle';
-    el.style.left = (Math.random() * 100) + '%';
-    el.style.top = '-10px';
-    el.style.background = colors[Math.floor(Math.random() * colors.length)];
-    el.style.width = (4 + Math.random() * 8) + 'px';
-    el.style.height = (4 + Math.random() * 8) + 'px';
-    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
-    el.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
-    el.style.animationDelay = (Math.random() * 0.5) + 's';
+function spawnConfetti(){
+  const colors=['#ff6b35','#ff3366','#ffd700','#4a90d9','#00ff88','#fff','#ff0000'];
+  for(let i=0;i<40;i++){
+    const el=document.createElement('div');
+    el.className='confetti-particle';
+    el.style.left=(Math.random()*100)+'%';
+    el.style.top='-10px';
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    el.style.width=(4+Math.random()*8)+'px';
+    el.style.height=(4+Math.random()*8)+'px';
+    el.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    el.style.animationDuration=(1.5+Math.random()*1.5)+'s';
+    el.style.animationDelay=(Math.random()*0.5)+'s';
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
+    setTimeout(()=>el.remove(),4000);
   }
 }
 
-function screenShake() {
-  document.getElementById('app').classList.add('screen-shake');
-  setTimeout(() => document.getElementById('app').classList.remove('screen-shake'), 400);
-}
+function screenShake(){
+  const app=document.getElementById('app');
+  const intensity=shakeIntensity;
+  const startTime=Date.now();
+  const duration=1000; // exactly 1 second
 
-function screenFlash() {
-  document.body.classList.add('screen-flash');
-  setTimeout(() => document.body.classList.remove('screen-flash'), 200);
-}
+  if(shakeTimer){cancelAnimationFrame(shakeTimer);shakeTimer=null;}
 
-function updateDrunkEffects() {
-  const app = document.getElementById('app');
-  const timer = document.getElementById('timerDisplay');
-  const maxTilt = 8;
-  const tiltDeg = Math.min(beers / 12, 1) * maxTilt * (Math.random() > 0.5 ? 1 : -1);
-  app.style.transform = beers > 0 ? 'rotate(' + tiltDeg.toFixed(2) + 'deg)' : 'rotate(0deg)';
-
-  // blur
-  const blur = Math.min(beers * 0.3, 4);
-  timer.style.filter = blur > 0 ? 'blur(' + blur.toFixed(1) + 'px)' : 'none';
-
-  // background color
-  const hrs = getElapsedHours();
-  const bph = hrs > 0 ? beers / hrs : 0;
-  if (bph <= 0.5) {
-    document.body.style.backgroundColor = '#0a0a0a';
-  } else if (bph <= 2) {
-    const t = (bph - 0.5) / 1.5;
-    document.body.style.backgroundColor = lerpColor('#0a0a0a', '#2a1500', t);
-  } else if (bph <= 4) {
-    const t = (bph - 2) / 2;
-    document.body.style.backgroundColor = lerpColor('#2a1500', '#3a0a00', t);
-  } else {
-    const t = Math.min((bph - 4) / 3, 1);
-    document.body.style.backgroundColor = lerpColor('#3a0a00', '#500000', t);
+  function shakeFrame(){
+    const elapsed=Date.now()-startTime;
+    if(elapsed>=duration){
+      shakeTimer=null;
+      updateDrunkEffects(); // restore drunk tilt
+      return;
+    }
+    const x=(Math.random()*2-1)*intensity;
+    const y=(Math.random()*2-1)*intensity*0.5;
+    const r=(Math.random()*2-1)*intensity*0.12;
+    app.style.transform='translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px) rotate('+r.toFixed(2)+'deg)';
+    shakeTimer=requestAnimationFrame(shakeFrame);
   }
 
-  // beer emoji display
-  const emojiEl = document.getElementById('beerEmoji');
-  emojiEl.textContent = '\u{1F37A}'.repeat(Math.min(beers, 15));
+  shakeFrame();
+  // intensity increases 50% for next beer
+  shakeIntensity=Math.min(Math.round(shakeIntensity*1.5),50);
 }
 
-function lerpColor(a, b, t) {
-  const ar = parseInt(a.slice(1, 3), 16), ag = parseInt(a.slice(3, 5), 16), ab = parseInt(a.slice(5, 7), 16);
-  const br = parseInt(b.slice(1, 3), 16), bg = parseInt(b.slice(3, 5), 16), bb = parseInt(b.slice(5, 7), 16);
-  const rr = Math.round(ar + (br - ar) * t);
-  const rg = Math.round(ag + (bg - ag) * t);
-  const rb = Math.round(ab + (bb - ab) * t);
-  return '#' + [rr, rg, rb].map(c => c.toString(16).padStart(2, '0')).join('');
+function screenFlash(){
+  document.body.style.transition='background 0.1s';
+  const orig=document.body.style.backgroundColor;
+  document.body.style.backgroundColor='#fff';
+  setTimeout(()=>{document.body.style.backgroundColor=orig;document.body.style.transition='background-color 0.8s ease';},100);
+}
+
+function updateDrunkEffects(){
+  const app=document.getElementById('app');
+  const timer=document.getElementById('timerDisplay');
+  // only apply tilt if not currently shaking
+  if(!shakeTimer){
+    const maxTilt=8;
+    const tiltDeg=Math.min(beers/12,1)*maxTilt*(Math.random()>0.5?1:-1);
+    app.style.transform=beers>0?'rotate('+tiltDeg.toFixed(2)+'deg)':'';
+  }
+  const blur=Math.min(beers*0.3,4);
+  timer.style.filter=blur>0?'blur('+blur.toFixed(1)+'px)':'none';
+  const hrs=getElapsedHours();
+  const bph=hrs>0?beers/hrs:0;
+  if(bph<=0.5){document.body.style.backgroundColor='var(--bg)';}
+  else if(bph<=2){const t=(bph-0.5)/1.5;document.body.style.backgroundColor=lerpColor('#0a0a12','#2a1500',t);}
+  else if(bph<=4){const t=(bph-2)/2;document.body.style.backgroundColor=lerpColor('#2a1500','#3a0a00',t);}
+  else{const t=Math.min((bph-4)/3,1);document.body.style.backgroundColor=lerpColor('#3a0a00','#500000',t);}
+  const emojiEl=document.getElementById('beerEmoji');
+  emojiEl.textContent='\u{1F37A}'.repeat(Math.min(beers,15));
+}
+
+function lerpColor(a,b,t){
+  const ar=parseInt(a.slice(1,3),16),ag=parseInt(a.slice(3,5),16),ab=parseInt(a.slice(5,7),16);
+  const br=parseInt(b.slice(1,3),16),bg=parseInt(b.slice(3,5),16),bb=parseInt(b.slice(5,7),16);
+  return '#'+[Math.round(ar+(br-ar)*t),Math.round(ag+(bg-ag)*t),Math.round(ab+(bb-ab)*t)].map(c=>c.toString(16).padStart(2,'0')).join('');
+}
+
+// ========== WARRIOR SELECT ==========
+function renderWarriorGrid(){
+  const grid=document.getElementById('warriorGrid');
+  grid.innerHTML=BEER_OPTIONS.map((beer,i)=>
+    '<div class="warrior-card" onclick="selectWarrior(\''+beer.id+'\')" style="--beer-color:'+beer.color+';animation-delay:'+(i*0.06)+'s">'+
+    '<div class="warrior-emoji">'+beer.emoji+'</div>'+
+    '<div class="warrior-name">'+beer.name+'</div>'+
+    '<div class="warrior-tagline">'+beer.tagline+'</div>'+
+    '</div>'
+  ).join('');
+}
+
+function showWarriorSelect(){
+  const overlay=document.getElementById('warriorOverlay');
+  overlay.classList.remove('closing');
+  overlay.classList.add('visible');
+  playArcadeSelect();
+}
+
+function hideWarriorSelect(){
+  const overlay=document.getElementById('warriorOverlay');
+  overlay.classList.add('closing');
+  setTimeout(()=>{overlay.classList.remove('visible','closing');},500);
+}
+
+function selectWarrior(beerId){
+  const beer=BEER_OPTIONS.find(b=>b.id===beerId);
+  if(!beer) return;
+  selectedBeer=beer;
+  playArcadeConfirm();
+
+  // highlight selected card
+  const cards=document.querySelectorAll('.warrior-card');
+  cards.forEach(c=>{
+    if(c.onclick.toString().includes(beerId)) c.classList.add('selected');
+    else c.style.opacity='0.3';
+  });
+
+  // flash "LET'S GO!" text
+  setTimeout(()=>{
+    const flash=document.getElementById('warriorFlash');
+    flash.classList.add('visible');
+    setTimeout(()=>{
+      flash.classList.remove('visible');
+      hideWarriorSelect();
+      // reset card styles
+      cards.forEach(c=>{c.classList.remove('selected');c.style.opacity='';});
+      startSession();
+    },700);
+  },400);
 }
 
 // ========== STATUS ==========
-function updateStatus() {
-  const badge = document.getElementById('statusBadge');
-  const hrs = getElapsedHours();
-  const bph = hrs > 0 ? beers / hrs : (beers > 0 ? beers * 60 : 0); // if < 1 min, estimate
-
-  let text, color;
-  if (beers === 0 && !sessionActive) {
-    text = 'Sober & Curious'; color = '#ffffff';
-  } else if (bph < 1) {
-    text = 'Sober & Curious'; color = '#ffffff';
-  } else if (bph < 2) {
-    text = 'Feeling Patriotic'; color = '#ffd700';
-  } else if (bph < 4) {
-    text = 'Full Send'; color = '#ff8c00';
-  } else if (bph < 6) {
-    text = 'Send Help'; color = '#ff0000';
-  } else {
-    text = 'CALL 911'; color = '#ff0000';
-  }
-
-  badge.textContent = text;
-  badge.style.color = color;
-  badge.style.borderColor = color;
-
-  // CALL 911 mode
-  if (text === 'CALL 911') {
-    badge.style.animation = 'status-flash 0.5s infinite';
-    if (!call911Interval) {
-      call911Interval = setInterval(() => {
-        document.body.classList.add('call911');
-      }, 100);
-      document.body.classList.add('call911');
-    }
-  } else {
-    badge.style.animation = 'none';
-    if (call911Interval) {
-      clearInterval(call911Interval);
-      call911Interval = null;
-      document.body.classList.remove('call911');
-    }
+function updateStatus(){
+  const badge=document.getElementById('statusBadge');
+  const hrs=getElapsedHours();
+  const bph=hrs>0?beers/hrs:(beers>0?beers*60:0);
+  let text,color;
+  if(beers===0&&!sessionActive){text='Sober & Curious';color='#ffffff';}
+  else if(bph<1){text='Sober & Curious';color='#ffffff';}
+  else if(bph<2){text='Feeling Patriotic';color='#ffd700';}
+  else if(bph<4){text='Full Send';color='#ff8c00';}
+  else if(bph<6){text='Send Help';color='#ff0000';}
+  else{text='CALL 911';color='#ff0000';}
+  badge.textContent=text;badge.style.color=color;badge.style.borderColor=color;
+  if(text==='CALL 911'){
+    badge.style.animation='status-flash 0.5s infinite';
+    if(!call911Interval){call911Interval=setInterval(()=>{document.body.classList.add('call911');},100);document.body.classList.add('call911');}
+  }else{
+    badge.style.animation='none';
+    if(call911Interval){clearInterval(call911Interval);call911Interval=null;document.body.classList.remove('call911');}
   }
 }
 
 // ========== TOAST ==========
-function showToast(msg) {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.textContent = msg;
+function showToast(msg){
+  const container=document.getElementById('toastContainer');
+  const toast=document.createElement('div');
+  toast.className='toast';toast.textContent=msg;
   container.appendChild(toast);
-  setTimeout(() => {
-    toast.classList.add('removing');
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
+  setTimeout(()=>{toast.classList.add('removing');setTimeout(()=>toast.remove(),300);},3000);
 }
 
 // ========== ACHIEVEMENTS ==========
-function getUnlockedAchievements() {
-  try { return JSON.parse(localStorage.getItem('blakeAchievements')) || []; }
-  catch { return []; }
+function getUnlockedAchievements(){
+  try{return JSON.parse(localStorage.getItem('blakeAchievements'))||[];}catch{return[];}
 }
-function saveAchievement(id) {
-  const unlocked = getUnlockedAchievements();
-  if (!unlocked.includes(id)) {
-    unlocked.push(id);
-    localStorage.setItem('blakeAchievements', JSON.stringify(unlocked));
-  }
+function saveAchievement(id){
+  const unlocked=getUnlockedAchievements();
+  if(!unlocked.includes(id)){unlocked.push(id);localStorage.setItem('blakeAchievements',JSON.stringify(unlocked));}
 }
-function checkAchievements() {
-  const unlocked = getUnlockedAchievements();
-  const hrs = getElapsedHours();
-  const bph = hrs > 0 ? beers / hrs : 0;
-  const record = getRecord();
-
-  const checks = [
-    { id: 'first_blood', cond: beers >= 1 },
-    { id: 'founding_father', cond: beers >= 5 },
-    { id: 'full_patriot', cond: beers >= 10 },
-    { id: 'rabbit_hole', cond: hrs >= 2 },
-    { id: 'no_life', cond: hrs >= 4 },
-    { id: 'efficiency', cond: bph >= 5 && hrs >= 0.05 },
-    { id: 'personal_record', cond: beers > record && beers > 0 && record > 0 },
+function checkAchievements(){
+  const unlocked=getUnlockedAchievements();
+  const hrs=getElapsedHours();const bph=hrs>0?beers/hrs:0;const record=getRecord();
+  const checks=[
+    {id:'first_blood',cond:beers>=1},{id:'founding_father',cond:beers>=5},
+    {id:'full_patriot',cond:beers>=10},{id:'rabbit_hole',cond:hrs>=2},
+    {id:'no_life',cond:hrs>=4},{id:'efficiency',cond:bph>=5&&hrs>=0.05},
+    {id:'personal_record',cond:beers>record&&beers>0&&record>0},
   ];
-
-  checks.forEach(ch => {
-    if (ch.cond && !unlocked.includes(ch.id)) {
-      const ach = ACHIEVEMENTS.find(a => a.id === ch.id);
-      saveAchievement(ch.id);
-      showToast(ach.icon + ' ' + ach.name + ' unlocked!');
-      playFanfare();
-      spawnConfetti();
+  checks.forEach(ch=>{
+    if(ch.cond&&!unlocked.includes(ch.id)){
+      const ach=ACHIEVEMENTS.find(a=>a.id===ch.id);
+      saveAchievement(ch.id);showToast(ach.icon+' '+ach.name+' unlocked!');
+      playFanfare();spawnConfetti();
     }
   });
   renderAchievements();
 }
-
-function renderAchievements() {
-  const unlocked = getUnlockedAchievements();
-  const container = document.getElementById('achievementsList');
-  container.innerHTML = ACHIEVEMENTS.map(a => {
-    const isUnlocked = unlocked.includes(a.id);
-    return '<span class="ach-badge ' + (isUnlocked ? 'unlocked' : '') + '" title="' + a.desc + '">' +
-      a.icon + ' ' + a.name + '</span>';
-  }).join('');
+function renderAchievements(){
+  const unlocked=getUnlockedAchievements();
+  document.getElementById('achievementsList').innerHTML=ACHIEVEMENTS.map(a=>
+    '<span class="ach-badge '+(unlocked.includes(a.id)?'unlocked':'')+'" title="'+a.desc+'">'+a.icon+' '+a.name+'</span>'
+  ).join('');
 }
 
 // ========== DATA ==========
-function getSessions() {
-  try { return JSON.parse(localStorage.getItem('blakeSessions')) || []; }
-  catch { return []; }
-}
-function saveSessions(s) { localStorage.setItem('blakeSessions', JSON.stringify(s)); }
-function getRecord() {
-  try { return parseInt(localStorage.getItem('blakeRecord')) || 0; }
-  catch { return 0; }
-}
-function saveRecord(r) { localStorage.setItem('blakeRecord', JSON.stringify(r)); }
-
-function getElapsedMs() {
-  if (!sessionStart) return 0;
-  return Date.now() - sessionStart;
-}
-function getElapsedHours() {
-  return getElapsedMs() / 3600000;
-}
-function formatTime(ms) {
-  const totalSec = Math.floor(ms / 1000);
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+function getSessions(){try{return JSON.parse(localStorage.getItem('blakeSessions'))||[];}catch{return[];}}
+function saveSessions(s){localStorage.setItem('blakeSessions',JSON.stringify(s));}
+function getRecord(){try{return parseInt(localStorage.getItem('blakeRecord'))||0;}catch{return 0;}}
+function saveRecord(r){localStorage.setItem('blakeRecord',JSON.stringify(r));}
+function getElapsedMs(){if(!sessionStart)return 0;return Date.now()-sessionStart;}
+function getElapsedHours(){return getElapsedMs()/3600000;}
+function formatTime(ms){
+  const s=Math.floor(ms/1000);
+  return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor((s%3600)/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
 }
 
-// ========== TIMER ==========
-function toggleSession() {
-  if (!sessionActive) {
-    startSession();
-  } else {
-    endSession();
-  }
+// ========== SESSION ==========
+function toggleSession(){
+  if(!sessionActive){showWarriorSelect();}
+  else{endSession();}
 }
 
-function startSession() {
-  sessionActive = true;
-  sessionStart = Date.now();
-  beers = 0;
-  document.getElementById('beerCount').textContent = '0';
-  document.getElementById('timerBtn').textContent = 'End Session';
+function startSession(){
+  sessionActive=true;sessionStart=Date.now();beers=0;shakeIntensity=3;
+  document.getElementById('beerCount').textContent='0';
+  document.getElementById('timerBtn').textContent='End Session';
   document.getElementById('timerBtn').classList.add('stop');
-  document.getElementById('minusBtn').disabled = true;
-  updateDrunkEffects();
-
-  playAirHorn();
-
-  timerInterval = setInterval(() => {
-    document.getElementById('timerDisplay').textContent = formatTime(getElapsedMs());
+  document.getElementById('minusBtn').disabled=true;
+  // show selected beer
+  if(selectedBeer){
+    document.getElementById('selectedBeerDisplay').innerHTML=
+      'Drinking: <span>'+selectedBeer.emoji+' '+selectedBeer.name+'</span>';
+  }
+  updateDrunkEffects();playAirHorn();
+  timerInterval=setInterval(()=>{
+    document.getElementById('timerDisplay').textContent=formatTime(getElapsedMs());
     checkAchievements();
-  }, 1000);
-
-  tickInterval = setInterval(() => {
-    if (sessionActive) playTick();
-  }, 1000);
-
-  statusInterval = setInterval(updateStatus, 30000);
+  },1000);
+  tickInterval=setInterval(()=>{if(sessionActive)playTick();},1000);
+  statusInterval=setInterval(updateStatus,30000);
   updateStatus();
 }
 
-function endSession() {
-  if (!sessionActive) return;
-  sessionActive = false;
-  const elapsed = getElapsedMs();
-  const hrs = elapsed / 3600000;
-  const bph = hrs > 0 ? (beers / hrs).toFixed(2) : '0.00';
-
-  clearInterval(timerInterval);
-  clearInterval(tickInterval);
-  clearInterval(statusInterval);
-  timerInterval = null;
-  tickInterval = null;
-  statusInterval = null;
-
+function endSession(){
+  if(!sessionActive)return;
+  sessionActive=false;
+  const elapsed=getElapsedMs();const hrs=elapsed/3600000;
+  const bph=hrs>0?(beers/hrs).toFixed(2):'0.00';
+  clearInterval(timerInterval);clearInterval(tickInterval);clearInterval(statusInterval);
+  timerInterval=null;tickInterval=null;statusInterval=null;
+  if(shakeTimer){cancelAnimationFrame(shakeTimer);shakeTimer=null;}
   playSadTrombone();
-
-  // save session
-  const session = {
-    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-    duration: formatTime(elapsed),
-    durationMs: elapsed,
-    beers: beers,
-    bph: parseFloat(bph),
+  const session={
+    date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+    duration:formatTime(elapsed),durationMs:elapsed,beers:beers,bph:parseFloat(bph),
+    beerType:selectedBeer?selectedBeer.name:null,
   };
-  const sessions = getSessions();
-  sessions.unshift(session);
-  saveSessions(sessions);
-
-  // update record
-  if (beers > getRecord()) {
-    saveRecord(beers);
-  }
-
-  // reset UI
-  document.getElementById('timerBtn').textContent = 'Start Session';
+  const sessions=getSessions();sessions.unshift(session);saveSessions(sessions);
+  if(beers>getRecord())saveRecord(beers);
+  document.getElementById('timerBtn').textContent='Start Session';
   document.getElementById('timerBtn').classList.remove('stop');
-
-  // clear drunk effects
-  document.getElementById('app').style.transform = 'rotate(0deg)';
-  document.getElementById('timerDisplay').style.filter = 'none';
-  document.body.style.backgroundColor = '#0a0a0a';
+  document.getElementById('app').style.transform='';
+  document.getElementById('timerDisplay').style.filter='none';
+  document.body.style.backgroundColor='';
   document.body.classList.remove('call911');
-  if (call911Interval) { clearInterval(call911Interval); call911Interval = null; }
-
-  updateStats();
-  renderHistory();
-  updateStatus();
+  if(call911Interval){clearInterval(call911Interval);call911Interval=null;}
+  document.getElementById('selectedBeerDisplay').innerHTML='';
+  selectedBeer=null;shakeIntensity=3;
+  updateStats();renderHistory();updateStatus();
 }
 
 // ========== BEER ==========
-function changeBeer(delta) {
-  if (!sessionActive) return;
-  beers = Math.max(0, beers + delta);
-  document.getElementById('beerCount').textContent = beers;
-  document.getElementById('minusBtn').disabled = beers <= 0;
+function changeBeer(delta){
+  if(!sessionActive)return;
+  beers=Math.max(0,beers+delta);
+  const countEl=document.getElementById('beerCount');
+  countEl.textContent=beers;
+  document.getElementById('minusBtn').disabled=beers<=0;
 
-  if (delta > 0) {
-    playEagleScreech();
-    spawnBeerRain();
+  if(delta>0){
+    playEagleScreech();spawnBeerRain();screenShake();
+    // pop animation on count
+    countEl.classList.remove('pop');void countEl.offsetWidth;countEl.classList.add('pop');
     // pulse the + button
-    const plusBtn = document.getElementById('plusBtn');
-    plusBtn.classList.remove('plus-pulse');
-    void plusBtn.offsetWidth; // reflow
-    plusBtn.classList.add('plus-pulse');
-
+    const plusBtn=document.getElementById('plusBtn');
+    plusBtn.classList.remove('plus-pulse');void plusBtn.offsetWidth;plusBtn.classList.add('plus-pulse');
     // milestones
-    if (beers === 5) { playUSAChant(); showToast('\u{1F1FA}\u{1F1F8} USA! USA! USA! \u{1F1FA}\u{1F1F8}'); }
-    if (beers === 10) {
-      playBigAirHorn();
-      screenShake();
-      screenFlash();
-      showToast('\u{1F4A5} 10 BEERS. ABSOLUTE UNIT. \u{1F4A5}');
-    }
-  } else {
+    if(beers===5){playUSAChant();showToast('\u{1F1FA}\u{1F1F8} USA! USA! USA! \u{1F1FA}\u{1F1F8}');}
+    if(beers===10){playBigAirHorn();screenFlash();showToast('\u{1F4A5} 10 BEERS. ABSOLUTE UNIT. \u{1F4A5}');}
+  }else{
     playSadBell();
   }
-
-  updateDrunkEffects();
-  updateStatus();
-  checkAchievements();
+  updateDrunkEffects();updateStatus();checkAchievements();
 }
 
 // ========== STATS ==========
-function updateStats() {
-  const sessions = getSessions();
-  let totalMs = 0, totalBeers = 0;
-  sessions.forEach(s => {
-    totalMs += s.durationMs || 0;
-    totalBeers += s.beers || 0;
-  });
-  const totalHrs = totalMs / 3600000;
-  const avgBph = totalHrs > 0 ? (totalBeers / totalHrs).toFixed(1) : '0.0';
-
-  document.getElementById('statHours').textContent = totalHrs.toFixed(1);
-  document.getElementById('statBeers').textContent = totalBeers;
-  document.getElementById('statAvg').textContent = avgBph;
-  document.getElementById('statRecord').textContent = getRecord();
+function updateStats(){
+  const sessions=getSessions();let totalMs=0,totalBeers=0;
+  sessions.forEach(s=>{totalMs+=s.durationMs||0;totalBeers+=s.beers||0;});
+  const totalHrs=totalMs/3600000;
+  document.getElementById('statHours').textContent=totalHrs.toFixed(1);
+  document.getElementById('statBeers').textContent=totalBeers;
+  document.getElementById('statAvg').textContent=totalHrs>0?(totalBeers/totalHrs).toFixed(1):'0.0';
+  document.getElementById('statRecord').textContent=getRecord();
 }
 
 // ========== HISTORY ==========
-function renderHistory() {
-  const sessions = getSessions();
-  const container = document.getElementById('historyList');
-  if (sessions.length === 0) {
-    container.innerHTML = '<div class="empty-state">No sessions yet. Start one above.</div>';
-    return;
-  }
-  container.innerHTML = sessions.map(s => {
-    const scoreLabel = s.bph < 2 ? 'Casual' : s.bph < 4 ? 'Committed' : s.bph < 6 ? 'Dangerous' : 'LEGENDARY';
-    return '<div class="history-card">' +
-      '<div class="hc-date">' + s.date + '</div>' +
-      '<div><div class="hc-val">' + s.duration + '</div><div class="hc-lbl">Duration</div></div>' +
-      '<div><div class="hc-val">' + s.beers + ' \u{1F37A}</div><div class="hc-lbl">Beers</div></div>' +
-      '<div><div class="hc-val hc-score">' + s.bph.toFixed(1) + '/hr</div><div class="hc-lbl">Rate</div></div>' +
-      '<div><div class="hc-val hc-score">' + scoreLabel + '</div><div class="hc-lbl">Verdict</div></div>' +
+function renderHistory(){
+  const sessions=getSessions();
+  const container=document.getElementById('historyList');
+  if(sessions.length===0){container.innerHTML='<div class="empty-state">No sessions yet. Start one above.</div>';return;}
+  container.innerHTML=sessions.map(s=>{
+    const scoreLabel=s.bph<2?'Casual':s.bph<4?'Committed':s.bph<6?'Dangerous':'LEGENDARY';
+    const beerLine=s.beerType?'<div class="hc-beer-type">'+s.beerType+'</div>':'';
+    return '<div class="history-card">'+
+      '<div class="hc-date">'+s.date+'</div>'+beerLine+
+      '<div><div class="hc-val">'+s.duration+'</div><div class="hc-lbl">Duration</div></div>'+
+      '<div><div class="hc-val">'+s.beers+' \u{1F37A}</div><div class="hc-lbl">Beers</div></div>'+
+      '<div><div class="hc-val hc-score">'+s.bph.toFixed(1)+'/hr</div><div class="hc-lbl">Rate</div></div>'+
+      '<div><div class="hc-val hc-score">'+scoreLabel+'</div><div class="hc-lbl">Verdict</div></div>'+
       '</div>';
   }).join('');
 }
 
 // ========== INIT ==========
-function init() {
-  updateStats();
-  renderHistory();
-  renderAchievements();
-  updateStatus();
+function init(){
+  renderWarriorGrid();updateStats();renderHistory();renderAchievements();updateStatus();
 }
 init();
 
-// Register service worker for PWA / offline support
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 </script>
 </body>
 </html>
