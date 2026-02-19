@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" fill="#0a0a0a"/>
+  <rect x="8" y="8" width="176" height="176" fill="none" stroke="#ff4500" stroke-width="6"/>
+  <text x="96" y="80" text-anchor="middle" font-family="monospace" font-weight="900" font-size="28" fill="#ff4500" letter-spacing="2">BLAKE'S</text>
+  <text x="96" y="115" text-anchor="middle" font-family="monospace" font-weight="900" font-size="22" fill="#ffffff" letter-spacing="1">DAMAGE</text>
+  <text x="96" y="148" text-anchor="middle" font-family="monospace" font-weight="900" font-size="22" fill="#ffffff" letter-spacing="1">REPORT</text>
+  <text x="96" y="175" text-anchor="middle" font-size="24">🍺</text>
+</svg>
