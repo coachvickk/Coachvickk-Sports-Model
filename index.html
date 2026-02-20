@@ -497,6 +497,69 @@ body.call911{animation:call911 0.5s ease 2 forwards}
   text-align:center;padding:40px 0 20px;
   color:var(--text-dim);font-size:0.6rem;letter-spacing:2px;font-weight:600;
 }
+
+/* ===== N64 BEER ANIMATION OVERLAY ===== */
+@keyframes n64-flash{
+  0%{opacity:0;transform:scale(1.1)}
+  8%{opacity:1;transform:scale(1)}
+  20%{opacity:0.6}
+  30%{opacity:1}
+  45%{opacity:0.7}
+  55%{opacity:1}
+  75%{opacity:0.9}
+  100%{opacity:0;transform:scale(0.95)}
+}
+.n64-overlay{
+  position:fixed;inset:0;z-index:9500;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  pointer-events:none;opacity:0;
+  background:rgba(0,0,0,0.93);
+}
+.n64-overlay.active{
+  animation:n64-flash 1s ease-out forwards;
+}
+/* CRT scanlines */
+.n64-overlay::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,transparent 2px,
+    rgba(0,255,0,0.04) 2px,
+    rgba(0,255,0,0.04) 4px
+  );
+  z-index:2;
+}
+/* Horizontal scan beam */
+.n64-overlay::before{
+  content:'';position:absolute;left:0;right:0;height:4px;
+  background:rgba(0,255,0,0.15);z-index:3;
+  animation:scanMove 0.4s linear infinite;pointer-events:none;
+}
+.n64-beer-num{
+  font-family:'Press Start 2P',monospace;
+  font-size:1.8rem;color:#ff6600;
+  text-shadow:0 0 20px #ff6600,0 0 40px rgba(255,102,0,0.6),
+              2px 2px 0 #000,-2px -2px 0 #000;
+  margin-bottom:8px;position:relative;z-index:1;
+  letter-spacing:4px;
+}
+.n64-art{
+  font-family:'Press Start 2P',monospace;
+  font-size:0.35rem;line-height:1.2;
+  white-space:pre;color:#33ff33;
+  text-shadow:0 0 8px #33ff33,0 0 20px rgba(51,255,51,0.4);
+  text-align:center;position:relative;z-index:1;
+}
+.n64-caption{
+  font-family:'Press Start 2P',monospace;
+  font-size:0.55rem;color:#ffff00;
+  text-shadow:0 0 12px #ffff00,0 0 25px rgba(255,255,0,0.5),
+              1px 1px 0 #000;
+  margin-top:12px;letter-spacing:3px;
+  position:relative;z-index:1;
+  text-align:center;max-width:90vw;
+}
 </style>
 </head>
 <body>
@@ -526,6 +589,13 @@ body.call911{animation:call911 0.5s ease 2 forwards}
   </div>
 </div>
 <div class="eagle-fly" id="eagleFly">&#x1F985;</div>
+
+<!-- ===== N64 BEER ANIMATION ===== -->
+<div class="n64-overlay" id="n64Overlay">
+  <div class="n64-beer-num" id="n64BeerNum"></div>
+  <div class="n64-art" id="n64Art"></div>
+  <div class="n64-caption" id="n64Caption"></div>
+</div>
 
 <!-- ===== MAIN DASHBOARD ===== -->
 <div id="app">
@@ -866,6 +936,403 @@ function playArcadeConfirm(){
     gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.08+0.12);
     osc.start(ctx.currentTime+i*0.08);osc.stop(ctx.currentTime+i*0.08+0.15);
   });
+}
+
+// ========== N64 BEER ANIMATIONS (20 UNIQUE SCENES) ==========
+const N64_SCENES = [
+  // Beer 1: First sip - nervous newbie
+  {
+    art:
+      '         ╔══╗         \n'+
+      '         ║..║         \n'+
+      '     ╔═══╬══╬═══╗    \n'+
+      '     ║   ║><║   ║    \n'+
+      '     ║   ╚══╝   ║    \n'+
+      '     ╚╗  ████  ╔╝    \n'+
+      '    ╔═╗║  ████  ║    \n'+
+      '    ║~║╚╗ ████ ╔╝    \n'+
+      '    ║~║ ║ █  █ ║     \n'+
+      '    ╚═╝ ║ █  █ ║     \n'+
+      '        ║ █  █ ║     \n'+
+      '        ╚═▀══▀═╝     ',
+    caption: 'FIRST SIP... HANDS SHAKING'
+  },
+  // Beer 2: Getting comfortable, kicked back
+  {
+    art:
+      '     ╔══════════╗     \n'+
+      '     ║  ⌐■  ■¬  ║    \n'+
+      '     ║    ▽     ║     \n'+
+      '     ╚════╦═════╝     \n'+
+      '     ╔════╩═════╗     \n'+
+      '  ╔═╗║          ║╔═╗  \n'+
+      '  ║~╠╣  CHILLIN ╠╣~║  \n'+
+      '  ╚═╝║          ║╚═╝  \n'+
+      '     ╚═╦══════╦═╝     \n'+
+      '    ═══╩══════╩═══    \n'+
+      '    ░░░░░░░░░░░░░░    \n'+
+      '      COUCH LOCK       ',
+    caption: 'DOUBLE FISTING ALREADY'
+  },
+  // Beer 3: Attempting to juggle beers
+  {
+    art:
+      '       ╔═╗ ╔═╗ ╔═╗   \n'+
+      '       ║~║ ║~║ ║~║   \n'+
+      '       ╚═╝ ╚═╝ ╚═╝   \n'+
+      '        \\   |   /    \n'+
+      '         \\  |  /     \n'+
+      '        ╔══════╗      \n'+
+      '        ║ O  O ║      \n'+
+      '        ║  ==  ║      \n'+
+      '        ╚══╦═══╝      \n'+
+      '       ╔═══╩════╗     \n'+
+      '       ║ JUGGLE ║     \n'+
+      '       ╚╦══════╦╝     \n'+
+      '        █      █      \n'+
+      '        ▀      ▀      ',
+    caption: 'TRIPLE THREAT MODE'
+  },
+  // Beer 4: Beer belly starting to grow
+  {
+    art:
+      '        ╔══════╗       \n'+
+      '        ║ @  @ ║       \n'+
+      '        ║  <>  ║       \n'+
+      '        ╚══╦═══╝       \n'+
+      '      ╔════╩═════╗     \n'+
+      '     ╔╝          ╚╗    \n'+
+      '     ║  ╔══════╗  ║    \n'+
+      '     ║  ║BELLY!║  ║    \n'+
+      '     ║  ║ FULL ║  ║    \n'+
+      '     ║  ╚══════╝  ║    \n'+
+      '     ╚╗    ██    ╔╝    \n'+
+      '      ╚════╩╩════╝     ',
+    caption: 'BEER BELLY: ACTIVATED'
+  },
+  // Beer 5: Flexing with beer, feeling invincible
+  {
+    art:
+      '        ╔══════╗       \n'+
+      '        ║ $  $ ║       \n'+
+      '        ║  \\/ ║       \n'+
+      '        ╚══╦═══╝       \n'+
+      '  ╔═╗╔════╩═════╗╔═╗  \n'+
+      '  ║~║║ FLEX ║~║  \n'+
+      '  ╚═╝║  ╔══════╗  ║╚═╝\n'+
+      ' ╔══╗║  ║SWOLE!║  ║╔══╗\n'+
+      ' ║▓▓║╚╗ ╚══════╝ ╔╝║▓▓║\n'+
+      ' ╚══╝ ║    ██    ║ ╚══╝\n'+
+      '      ║    ██    ║     \n'+
+      '      ╚════╩╩════╝     ',
+    caption: 'HALFWAY TO HERO STATUS'
+  },
+  // Beer 6: Shotgunning a beer
+  {
+    art:
+      '             ╔═══╗     \n'+
+      '             ║~~~║     \n'+
+      '             ║~~~║     \n'+
+      '        ╔════╬═══╝     \n'+
+      '        ║°  °║  \\     \n'+
+      '        ║ O  ║~~~\\    \n'+
+      '        ╚╦═══╝~~~~\\   \n'+
+      '      ╔══╩════╗    |   \n'+
+      '      ║CHUG!!!║    |   \n'+
+      '      ╚╦════╦═╝    |   \n'+
+      '       █    █      |   \n'+
+      '       ▀    ▀   SPLASH ',
+    caption: 'SHOTGUN!! LETS GOOOO'
+  },
+  // Beer 7: Riding a giant beer bottle like a horse
+  {
+    art:
+      '       ╔════╗          \n'+
+      '       ║x  x║         \n'+
+      '       ║ YE ║         \n'+
+      '       ╚╦═══╝         \n'+
+      '     ╔══╩═══╗         \n'+
+      '     ║YEEHAW║         \n'+
+      '     ╚╦══╦══╝         \n'+
+      '  ╔═══╩══╩═══════╗    \n'+
+      '  ║  GIANT BEER  ║    \n'+
+      '  ║~~~~~~~~~~~~~~║    \n'+
+      '  ║~~~~~~~~~~~~~~║    \n'+
+      '  ╚══╦══════╦════╝    \n'+
+      '    ╔╩╗    ╔╩╗        \n'+
+      '    ╚═╝    ╚═╝        ',
+    caption: 'RIDIN THE BEER PONY'
+  },
+  // Beer 8: Swimming in a pool of beer
+  {
+    art:
+      '  ╔════════════════╗   \n'+
+      '  ║~~~~~~~~~~~~~~~~║   \n'+
+      '  ║~~ ╔════╗ ~~~~~~║   \n'+
+      '  ║~~ ║^  ^║ ~~~~~~║   \n'+
+      '  ║~~ ║HELP║ ~~~~~~║   \n'+
+      '  ║~~ ╚╦╦══╝ ~~~~~~║   \n'+
+      '  ║~~~~╠╣~~~~~~~~~~║   \n'+
+      '  ║~~~~~~~~~~~~~~~║    \n'+
+      '  ║~~~ BEER POOL ~~║   \n'+
+      '  ╚════════════════╝   \n'+
+      '   ░░DEEP END: 8░░░   ',
+    caption: 'DROWNIN IN THE SAUCE'
+  },
+  // Beer 9: Floating/flying with beer wings
+  {
+    art:
+      '    *  *    *   *      \n'+
+      '  *    *  *   *   *    \n'+
+      '  ╔═╗         ╔═╗     \n'+
+      '  ║~║ ╔═════╗ ║~║     \n'+
+      '  ╚═╬═╣ 0 0 ╠═╬═╝    \n'+
+      ' /  ║ ║  ^  ║ ║  \\   \n'+
+      '/===╬═╣CLOUD╠═╬===\\  \n'+
+      '    ║ ╚══╦══╝ ║       \n'+
+      '    ║ ╔══╩══╗ ║       \n'+
+      '    ╚═╣NINE!╠═╝       \n'+
+      '      ╚══╦══╝         \n'+
+      '        \\|/           \n'+
+      '      ~clouds~        ',
+    caption: 'IM ON CLOUD NINE BRO'
+  },
+  // Beer 10: Mind blown, double digits
+  {
+    art:
+      '      * * * * * *      \n'+
+      '     * BOOM BOOM *     \n'+
+      '    *  ╔══════╗  *     \n'+
+      '   *   ║ X  X ║   *   \n'+
+      '    *  ║  {}  ║  *     \n'+
+      '     * ╚══╦═══╝ *      \n'+
+      '      ╔═══╩════╗       \n'+
+      '   ╔═╗║        ║╔═╗    \n'+
+      '   ║~╠╣  UNIT  ╠╣~║    \n'+
+      '   ║~║║        ║║~║    \n'+
+      '   ║~║╚╗  ██  ╔╝║~║    \n'+
+      '   ╚═╝ ║  ██  ║ ╚═╝    \n'+
+      '       ╚══╩╩══╝        ',
+    caption: 'DOUBLE DIGITS BABY!!!'
+  },
+  // Beer 11: Pouring beer on own head celebration
+  {
+    art:
+      '         ╔═══╗         \n'+
+      '         ║~~~║         \n'+
+      '         ╚═╦═╝         \n'+
+      '       ~~~~|~~~~       \n'+
+      '      ~~~~~|~~~~~      \n'+
+      '        ╔══╧══╗        \n'+
+      '        ║*  * ║        \n'+
+      '        ║ AHH ║        \n'+
+      '        ╚══╦══╝        \n'+
+      '       ╔═══╩════╗      \n'+
+      '       ║SOAKING!║      \n'+
+      '       ╚╦══════╦╝      \n'+
+      '     ~~~█~~~~~~█~~~    \n'+
+      '     ~~~▀~~~~~~▀~~~    ',
+    caption: 'BEER SHOWER ACTIVATED'
+  },
+  // Beer 12: Full 12 pack warrior with helmet
+  {
+    art:
+      '       ╔══════╗        \n'+
+      '      ╔╣HELMET╠╗       \n'+
+      '      ║╚══════╝║       \n'+
+      '      ║║ @  @ ║║       \n'+
+      '      ║║  <>  ║║       \n'+
+      '      ╚╬══╦═══╬╝       \n'+
+      '    ╔══╬══╩═══╬══╗     \n'+
+      '  --|--║KNIGHT║--|--   \n'+
+      '    ╚══╬══════╬══╝     \n'+
+      '  ╔═══╗║  ██  ║╔═══╗   \n'+
+      '  ║ALE║║  ██  ║║ALE║   \n'+
+      '  ╚═══╝╚══╩╩══╝╚═══╝   ',
+    caption: '12-PACK KNIGHT ARMOR ON'
+  },
+  // Beer 13: Chugging upside down (keg stand)
+  {
+    art:
+      '      ══▀════▀══       \n'+
+      '        █    █         \n'+
+      '        █    █         \n'+
+      '       ╔╩════╩╗        \n'+
+      '       ║ LEGS ║        \n'+
+      '       ╚═╦══╦═╝        \n'+
+      '       ╔═╩══╩═╗        \n'+
+      '       ║dn  si║        \n'+
+      '       ║ ^^ ╔═╩══╗     \n'+
+      '       ╚════╣~~~~║     \n'+
+      '            ║~~~~║     \n'+
+      '            ║ KEG║     \n'+
+      '            ╚════╝     ',
+    caption: 'KEG STAND!! 13 SECONDS'
+  },
+  // Beer 14: Seeing double/triple from beer goggles
+  {
+    art:
+      '  ╔════╗ ╔════╗ ╔════╗ \n'+
+      '  ║?  ?║ ║?  ?║ ║?  ?║ \n'+
+      '  ║ ~~ ║ ║ ~~ ║ ║ ~~ ║ \n'+
+      '  ╚══╦═╝ ╚══╦═╝ ╚══╦═╝ \n'+
+      '   ╔═╩╗   ╔═╩╗   ╔═╩╗  \n'+
+      '   ║  ║   ║  ║   ║  ║  \n'+
+      '   ╚╦═╝   ╚╦═╝   ╚╦═╝  \n'+
+      '    █       █       █   \n'+
+      '    ▀       ▀       ▀   \n'+
+      '  WAIT... HOW MANY ME?  ',
+    caption: 'BEER GOGGLES: SEEING 3X'
+  },
+  // Beer 15: King on beer throne
+  {
+    art:
+      '      ╔╗ ╔╗ ╔╗         \n'+
+      '      ╠╬═╬╬═╬╣  CROWN  \n'+
+      '      ╚╬═╬╬═╬╝         \n'+
+      '       ║$  $║          \n'+
+      '       ║ HA ║          \n'+
+      '       ╚═╦══╝          \n'+
+      '  ╔═╗ ╔══╩═══╗ ╔═╗    \n'+
+      '  ║~╠═╣ KING ╠═╣~║    \n'+
+      '  ╚═╝ ╚══╦═══╝ ╚═╝    \n'+
+      ' ╔═╗╔═╗╔═╩═╗╔═╗╔═╗    \n'+
+      ' ║~║║~║║ T ║║~║║~║    \n'+
+      ' ║~║║~║║ H ║║~║║~║    \n'+
+      ' ║~║║~║║ R ║║~║║~║    \n'+
+      ' ╚═╝╚═╝╚═══╝╚═╝╚═╝    ',
+    caption: 'BOW TO THE BEER KING'
+  },
+  // Beer 16: Dual wielding, beer in each hand + mouth + head
+  {
+    art:
+      '         ╔═╗            \n'+
+      '         ║~║  ON HEAD   \n'+
+      '       ╔═╬═╬═╗          \n'+
+      '       ║ @  @ ║         \n'+
+      '    ╔═╗║>~~~~<║╔═╗      \n'+
+      '    ║~╠╣ GLUG ╠╣~║      \n'+
+      '    ╚═╝╚══╦═══╝╚═╝      \n'+
+      '       ╔══╩════╗        \n'+
+      '       ║ QUAD  ║        \n'+
+      '       ║ WIELD ║        \n'+
+      '       ╚╦════╦═╝        \n'+
+      '      ╔═╩╗  ╔╩═╗        \n'+
+      '      ║~~ ║  ║~~║        \n'+
+      '      ╚══╝  ╚══╝        ',
+    caption: '4 BEERS AT ONCE!? LEGEND'
+  },
+  // Beer 17: Ascending to a higher plane
+  {
+    art:
+      '    ░░░░░░░░░░░░░░     \n'+
+      '   ░░ ASCENSION ░░     \n'+
+      '  ░░░░░░░░░░░░░░░░░    \n'+
+      '     \\\\  |  //        \n'+
+      '      \\\\ | //         \n'+
+      '       ╔═════╗         \n'+
+      '       ║ O O ║         \n'+
+      '       ║  =  ║         \n'+
+      '       ╚══╦══╝         \n'+
+      '     ~~╔══╩══╗~~       \n'+
+      '    ~~ ║GLOW!║ ~~      \n'+
+      '     ~~╚═════╝~~       \n'+
+      '      \\\\|||//         \n'+
+      '       \\\\|//          \n'+
+      '        \\|/            ',
+    caption: 'TRANSCENDING REALITY'
+  },
+  // Beer 18: Multi-armed beer god (like Shiva)
+  {
+    art:
+      '  ╔═╗╔═╗╔═══╗╔═╗╔═╗   \n'+
+      '  ║~║║~║║ * ║║~║║~║   \n'+
+      '  ╚═╬╩═╬╣ * ╠╬═╩╬═╝   \n'+
+      '  --║--║║   ║║--║--   \n'+
+      '  ╔═╬══╬╣   ╠╬══╬═╗   \n'+
+      '  ║~║  ║╚═══╝║  ║~║   \n'+
+      '  ╚═╝  ║ GOD ║  ╚═╝   \n'+
+      '    ╔═╗║MODE!║╔═╗     \n'+
+      '    ║~╠╣     ╠╣~║     \n'+
+      '    ╚═╝╚══╦══╝╚═╝     \n'+
+      '       ╔══╩══╗        \n'+
+      '       █     █        \n'+
+      '       ▀     ▀        ',
+    caption: '6-ARM BEER GOD MODE'
+  },
+  // Beer 19: Godzilla-sized, destroying city
+  {
+    art:
+      '              ╔═══╗     \n'+
+      '              ║X X║     \n'+
+      '              ║RAW║     \n'+
+      '              ╚═╦═╝     \n'+
+      '           ╔════╩════╗  \n'+
+      '        ╔═╗║  MEGA   ║  \n'+
+      '        ║~╠╣  BEER   ║  \n'+
+      '        ╚═╝║  ZILLA  ║  \n'+
+      '           ╚╦═══════╦╝  \n'+
+      '  ╔╗ ╔╗  ╔═╩╗    ╔═╩╗  \n'+
+      '  ║╚═╝║  █   █  █   █  \n'+
+      '  ╚═══╝  ▀   ▀  ▀   ▀  \n'+
+      ' ~CITY~  STOMP  STOMP   ',
+    caption: 'BEERZILLA DESTROYS CITY'
+  },
+  // Beer 20: Ultimate form - Hall of Fame monument
+  {
+    art:
+      '   ╔═══════════════╗    \n'+
+      '   ║  ★ HALL OF ★  ║    \n'+
+      '   ║    ★FAME★     ║    \n'+
+      '   ╠═══════════════╣    \n'+
+      '   ║   ╔═══════╗   ║    \n'+
+      '   ║   ║ CHAMP ║   ║    \n'+
+      '   ║   ║ ╔═══╗ ║   ║    \n'+
+      '   ║   ║ ║^_^║ ║   ║    \n'+
+      '   ║   ║ ╚═╦═╝ ║   ║    \n'+
+      '   ║   ║ ╔═╩═╗ ║   ║    \n'+
+      '   ║   ║ ║   ║ ║   ║    \n'+
+      '   ║   ╚═╩═══╩═╝   ║    \n'+
+      '   ║   20 BEERS!!   ║    \n'+
+      '   ╚═══════════════╝    \n'+
+      '    ╔═╗╔═╗╔═╗╔═╗╔═╗    \n'+
+      '    ║~║║~║║~║║~║║~║    \n'+
+      '    ╚═╝╚═╝╚═╝╚═╝╚═╝    ',
+    caption: 'IMMORTALIZED FOREVER'
+  },
+];
+
+let n64Timer = null;
+
+function triggerN64Animation(beerNum){
+  const overlay = document.getElementById('n64Overlay');
+  const artEl = document.getElementById('n64Art');
+  const captionEl = document.getElementById('n64Caption');
+  const numEl = document.getElementById('n64BeerNum');
+
+  // Get scene (clamp to 1-20, cycle if over 20)
+  const idx = ((beerNum - 1) % 20);
+  const scene = N64_SCENES[idx];
+  if(!scene) return;
+
+  // Clear any existing animation
+  if(n64Timer){ clearTimeout(n64Timer); n64Timer = null; }
+  overlay.classList.remove('active');
+  void overlay.offsetWidth; // force reflow
+
+  // Set content
+  numEl.textContent = 'BEER #' + beerNum;
+  artEl.textContent = scene.art;
+  captionEl.textContent = scene.caption;
+
+  // Trigger 1-second flash animation
+  overlay.classList.add('active');
+
+  // Remove after exactly 1 second (matches animation duration)
+  n64Timer = setTimeout(()=>{
+    overlay.classList.remove('active');
+    n64Timer = null;
+  }, 1000);
 }
 
 // ========== FLAG + EAGLE ANIMATION ==========
@@ -1235,9 +1702,10 @@ function changeBeer(delta){
   document.getElementById('minusBtn').disabled=beers<=0;
 
   if(delta>0){
-    // Guitar riff + flag/eagle animation on every beer
+    // Guitar riff + flag/eagle + N64 animation on every beer
     playGuitarRiff();
     triggerFlagEagle();
+    triggerN64Animation(beers);
     spawnBeerRain();
     screenShake();
     // pop animation on count
