@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blakes-damage-report-v3';
+const CACHE_NAME = 'blakes-damage-report-v4';
 const ASSETS = [
   '/Coachvickk-Sports-Model/',
   '/Coachvickk-Sports-Model/index.html',

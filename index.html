@@ -498,26 +498,37 @@ body.call911{animation:call911 0.5s ease 2 forwards}
   color:var(--text-dim);font-size:0.6rem;letter-spacing:2px;font-weight:600;
 }
 
-/* ===== N64 BEER ANIMATION OVERLAY ===== */
-@keyframes n64-flash{
-  0%{opacity:0;transform:scale(1.1)}
-  8%{opacity:1;transform:scale(1)}
-  20%{opacity:0.6}
-  30%{opacity:1}
-  45%{opacity:0.7}
-  55%{opacity:1}
-  75%{opacity:0.9}
-  100%{opacity:0;transform:scale(0.95)}
+/* ===== N64 BEER CUTSCENE OVERLAY ===== */
+@keyframes n64-cutscene{
+  0%{opacity:0}
+  4%{opacity:1}
+  88%{opacity:1}
+  100%{opacity:0}
+}
+@keyframes n64-title-in{
+  0%{opacity:0;transform:scale(2.5) rotate(-8deg)}
+  60%{opacity:1;transform:scale(0.95) rotate(1deg)}
+  100%{opacity:1;transform:scale(1) rotate(0deg)}
+}
+@keyframes n64-blink{
+  0%,100%{opacity:1}50%{opacity:0}
+}
+@keyframes n64-vhs-track{
+  0%{transform:translateX(0)}
+  25%{transform:translateX(-2px)}
+  50%{transform:translateX(1px)}
+  75%{transform:translateX(-1px)}
+  100%{transform:translateX(0)}
 }
 .n64-overlay{
   position:fixed;inset:0;z-index:9500;
   display:flex;flex-direction:column;
   align-items:center;justify-content:center;
   pointer-events:none;opacity:0;
-  background:rgba(0,0,0,0.93);
+  background:rgba(0,0,0,0.95);
 }
 .n64-overlay.active{
-  animation:n64-flash 1s ease-out forwards;
+  animation:n64-cutscene 5s ease-out forwards;
 }
 /* CRT scanlines */
 .n64-overlay::after{
@@ -528,37 +539,100 @@ body.call911{animation:call911 0.5s ease 2 forwards}
     rgba(0,255,0,0.04) 2px,
     rgba(0,255,0,0.04) 4px
   );
-  z-index:2;
+  z-index:6;
 }
-/* Horizontal scan beam */
-.n64-overlay::before{
-  content:'';position:absolute;left:0;right:0;height:4px;
-  background:rgba(0,255,0,0.15);z-index:3;
-  animation:scanMove 0.4s linear infinite;pointer-events:none;
+/* Cinematic letterbox bars */
+.n64-bar{
+  position:absolute;left:0;right:0;
+  height:10%;background:#000;z-index:7;
 }
+.n64-bar.top{top:0}
+.n64-bar.bottom{bottom:0}
+/* Title */
 .n64-beer-num{
   font-family:'Press Start 2P',monospace;
-  font-size:1.8rem;color:#ff6600;
+  font-size:1.1rem;color:#ff6600;
   text-shadow:0 0 20px #ff6600,0 0 40px rgba(255,102,0,0.6),
-              2px 2px 0 #000,-2px -2px 0 #000;
-  margin-bottom:8px;position:relative;z-index:1;
-  letter-spacing:4px;
+              2px 2px 0 #000;
+  margin-bottom:6px;position:relative;z-index:5;
+  letter-spacing:3px;opacity:0;
 }
+.n64-overlay.active .n64-beer-num{
+  animation:n64-title-in 0.4s ease 0.15s forwards;
+}
+/* Art */
 .n64-art{
   font-family:'Press Start 2P',monospace;
-  font-size:0.35rem;line-height:1.2;
+  font-size:0.3rem;line-height:1.15;
   white-space:pre;color:#33ff33;
   text-shadow:0 0 8px #33ff33,0 0 20px rgba(51,255,51,0.4);
-  text-align:center;position:relative;z-index:1;
+  text-align:center;position:relative;z-index:5;
+  min-height:100px;
+  animation:n64-vhs-track 0.15s linear infinite;
 }
+/* Caption */
 .n64-caption{
   font-family:'Press Start 2P',monospace;
-  font-size:0.55rem;color:#ffff00;
+  font-size:0.45rem;color:#ffff00;
   text-shadow:0 0 12px #ffff00,0 0 25px rgba(255,255,0,0.5),
               1px 1px 0 #000;
-  margin-top:12px;letter-spacing:3px;
-  position:relative;z-index:1;
+  margin-top:8px;letter-spacing:2px;
+  position:relative;z-index:5;
   text-align:center;max-width:90vw;
+}
+/* GTA-style dialogue box */
+.n64-dialogue{
+  position:absolute;bottom:12%;left:4%;right:4%;
+  background:rgba(0,0,0,0.88);
+  border:2px solid #33ff33;
+  border-radius:4px;padding:10px 14px;
+  z-index:8;opacity:0;
+  transition:opacity 0.3s;
+  box-shadow:0 0 20px rgba(51,255,51,0.2),inset 0 0 30px rgba(0,0,0,0.5);
+}
+.n64-dialogue.visible{opacity:1}
+.n64-speaker{
+  font-family:'Press Start 2P',monospace;
+  font-size:0.35rem;color:#ff6600;
+  margin-bottom:6px;letter-spacing:2px;
+  text-shadow:0 0 8px rgba(255,102,0,0.5);
+}
+.n64-dialogue-text{
+  font-family:'Press Start 2P',monospace;
+  font-size:0.3rem;color:#33ff33;
+  line-height:1.8;min-height:2.4em;
+  text-shadow:0 0 5px rgba(51,255,51,0.3);
+}
+.n64-cursor{
+  display:inline-block;width:6px;height:0.35rem;
+  background:#33ff33;vertical-align:middle;
+  animation:n64-blink 0.4s step-end infinite;
+  box-shadow:0 0 6px #33ff33;
+}
+/* ===== ISRAEL SPECIAL (Beer 15) ===== */
+.n64-overlay.israel .n64-art{
+  color:#0038b8;
+  text-shadow:0 0 10px #0038b8,0 0 25px rgba(0,56,184,0.5);
+}
+.n64-overlay.israel .n64-dialogue{
+  border-color:#0038b8;
+  box-shadow:0 0 20px rgba(0,56,184,0.3),inset 0 0 30px rgba(0,0,0,0.5);
+}
+.n64-overlay.israel .n64-dialogue-text{
+  color:#fff;text-shadow:0 0 5px rgba(255,255,255,0.3);
+}
+.n64-overlay.israel .n64-cursor{
+  background:#fff;box-shadow:0 0 6px #fff;
+}
+.n64-overlay.israel .n64-speaker{
+  color:#0038b8;text-shadow:0 0 8px rgba(0,56,184,0.5);
+}
+.n64-overlay.israel .n64-beer-num{
+  color:#0038b8;
+  text-shadow:0 0 20px #0038b8,0 0 40px rgba(0,56,184,0.6),2px 2px 0 #000;
+}
+.n64-overlay.israel .n64-caption{
+  color:#fff;text-shadow:0 0 15px #fff,0 0 30px rgba(255,255,255,0.5),1px 1px 0 #000;
 }
 </style>
 </head>
@@ -590,11 +664,17 @@ body.call911{animation:call911 0.5s ease 2 forwards}
 </div>
 <div class="eagle-fly" id="eagleFly">&#x1F985;</div>
 
-<!-- ===== N64 BEER ANIMATION ===== -->
+<!-- ===== N64 BEER CUTSCENE ===== -->
 <div class="n64-overlay" id="n64Overlay">
+  <div class="n64-bar top"></div>
   <div class="n64-beer-num" id="n64BeerNum"></div>
   <div class="n64-art" id="n64Art"></div>
   <div class="n64-caption" id="n64Caption"></div>
+  <div class="n64-dialogue" id="n64Dialogue">
+    <div class="n64-speaker" id="n64Speaker"></div>
+    <div class="n64-dialogue-text" id="n64DialogueText"></div>
+  </div>
+  <div class="n64-bar bottom"></div>
 </div>
 
 <!-- ===== MAIN DASHBOARD ===== -->
@@ -938,7 +1018,7 @@ function playArcadeConfirm(){
   });
 }
 
-// ========== N64 BEER ANIMATIONS (20 UNIQUE SCENES) ==========
+// ========== N64 GTA-STYLE BEER CUTSCENES (20 UNIQUE SCENES) ==========
 const N64_SCENES = [
   // Beer 1: First sip - nervous newbie
   {
@@ -955,9 +1035,11 @@ const N64_SCENES = [
       '    ╚═╝ ║ █  █ ║     \n'+
       '        ║ █  █ ║     \n'+
       '        ╚═▀══▀═╝     ',
-    caption: 'FIRST SIP... HANDS SHAKING'
+    caption: 'MISSION: FIRST SIP',
+    speaker: 'BLAKE',
+    dialogue: 'Yo... is this thing alcoholic? My hands won\'t stop shaking... here goes nothing.'
   },
-  // Beer 2: Getting comfortable, kicked back
+  // Beer 2: Kicked back, double fisting
   {
     art:
       '     ╔══════════╗     \n'+
@@ -972,9 +1054,11 @@ const N64_SCENES = [
       '    ═══╩══════╩═══    \n'+
       '    ░░░░░░░░░░░░░░    \n'+
       '      COUCH LOCK       ',
-    caption: 'DOUBLE FISTING ALREADY'
+    caption: 'MISSION: WARM UP',
+    speaker: 'BLAKE',
+    dialogue: 'Aight I\'m warmed up now. One in each hand. This is how the pros do it.'
   },
-  // Beer 3: Attempting to juggle beers
+  // Beer 3: Juggling beers
   {
     art:
       '       ╔═╗ ╔═╗ ╔═╗   \n'+
@@ -991,9 +1075,11 @@ const N64_SCENES = [
       '       ╚╦══════╦╝     \n'+
       '        █      █      \n'+
       '        ▀      ▀      ',
-    caption: 'TRIPLE THREAT MODE'
+    caption: 'MISSION: TRICK SHOT',
+    speaker: 'BLAKE',
+    dialogue: 'Watch this trick shot bro! Three at once! I saw a guy do this on YouTube... oh no OH NO--'
   },
-  // Beer 4: Beer belly starting to grow
+  // Beer 4: Beer belly growing
   {
     art:
       '        ╔══════╗       \n'+
@@ -1008,26 +1094,30 @@ const N64_SCENES = [
       '     ║  ╚══════╝  ║    \n'+
       '     ╚╗    ██    ╔╝    \n'+
       '      ╚════╩╩════╝     ',
-    caption: 'BEER BELLY: ACTIVATED'
+    caption: 'MISSION: GUT CHECK',
+    speaker: 'BLAKE\'S STOMACH',
+    dialogue: 'My six pack just turned into a keg. The shirt ain\'t fitting no more but WE KEEP GOING.'
   },
-  // Beer 5: Flexing with beer, feeling invincible
+  // Beer 5: Flexing with beers
   {
     art:
       '        ╔══════╗       \n'+
       '        ║ $  $ ║       \n'+
-      '        ║  \\/ ║       \n'+
+      '        ║  \\/  ║      \n'+
       '        ╚══╦═══╝       \n'+
       '  ╔═╗╔════╩═════╗╔═╗  \n'+
-      '  ║~║║ FLEX ║~║  \n'+
-      '  ╚═╝║  ╔══════╗  ║╚═╝\n'+
-      ' ╔══╗║  ║SWOLE!║  ║╔══╗\n'+
-      ' ║▓▓║╚╗ ╚══════╝ ╔╝║▓▓║\n'+
-      ' ╚══╝ ║    ██    ║ ╚══╝\n'+
-      '      ║    ██    ║     \n'+
-      '      ╚════╩╩════╝     ',
-    caption: 'HALFWAY TO HERO STATUS'
+      '  ║~║║  SWOLE!  ║║~║  \n'+
+      '  ╚═╝║  ╔════╗  ║╚═╝  \n'+
+      ' ╔══╗║  ║FLEX║  ║╔══╗ \n'+
+      ' ║▓▓║╚╗ ╚════╝ ╔╝║▓▓║ \n'+
+      ' ╚══╝ ║   ██   ║ ╚══╝ \n'+
+      '      ║   ██   ║      \n'+
+      '      ╚═══╩╩═══╝      ',
+    caption: 'MISSION: FLEX ZONE',
+    speaker: 'BLAKE',
+    dialogue: 'I COULD FIGHT A BEAR RIGHT NOW!! Somebody call a bear! WHERE\'S THE BEAR!?'
   },
-  // Beer 6: Shotgunning a beer
+  // Beer 6: Shotgunning
   {
     art:
       '             ╔═══╗     \n'+
@@ -1042,9 +1132,11 @@ const N64_SCENES = [
       '      ╚╦════╦═╝    |   \n'+
       '       █    █      |   \n'+
       '       ▀    ▀   SPLASH ',
-    caption: 'SHOTGUN!! LETS GOOOO'
+    caption: 'MISSION: SHOTGUN',
+    speaker: 'THE BOYS',
+    dialogue: 'SHOTGUN! SHOTGUN! Somebody poke a hole in it! NO RULES BABY!! GO GO GO!!'
   },
-  // Beer 7: Riding a giant beer bottle like a horse
+  // Beer 7: Riding a giant beer
   {
     art:
       '       ╔════╗          \n'+
@@ -1061,9 +1153,11 @@ const N64_SCENES = [
       '  ╚══╦══════╦════╝    \n'+
       '    ╔╩╗    ╔╩╗        \n'+
       '    ╚═╝    ╚═╝        ',
-    caption: 'RIDIN THE BEER PONY'
+    caption: 'MISSION: RODEO',
+    speaker: 'BLAKE',
+    dialogue: 'YEEHAW!! Ride \'em cowboy!! This beer ain\'t gonna drink itself... wait yes it is I\'m on it.'
   },
-  // Beer 8: Swimming in a pool of beer
+  // Beer 8: Swimming in beer pool
   {
     art:
       '  ╔════════════════╗   \n'+
@@ -1077,9 +1171,11 @@ const N64_SCENES = [
       '  ║~~~ BEER POOL ~~║   \n'+
       '  ╚════════════════╝   \n'+
       '   ░░DEEP END: 8░░░   ',
-    caption: 'DROWNIN IN THE SAUCE'
+    caption: 'MISSION: DEEP END',
+    speaker: 'LIFEGUARD',
+    dialogue: 'SIR! There\'s no swimming in the-- Sir are you DRINKING the pool?! I\'m not drowning, I\'m MARINATING!!'
   },
-  // Beer 9: Floating/flying with beer wings
+  // Beer 9: Flying with beer wings
   {
     art:
       '    *  *    *   *      \n'+
@@ -1095,9 +1191,11 @@ const N64_SCENES = [
       '      ╚══╦══╝         \n'+
       '        \\|/           \n'+
       '      ~clouds~        ',
-    caption: 'IM ON CLOUD NINE BRO'
+    caption: 'MISSION: CLOUD 9',
+    speaker: 'BLAKE',
+    dialogue: 'I can see my house from up here!! Is that... is that a Taco Bell?? TAKE ME DOWN THERE!!'
   },
-  // Beer 10: Mind blown, double digits
+  // Beer 10: Mind blown double digits
   {
     art:
       '      * * * * * *      \n'+
@@ -1113,9 +1211,11 @@ const N64_SCENES = [
       '   ║~║╚╗  ██  ╔╝║~║    \n'+
       '   ╚═╝ ║  ██  ║ ╚═╝    \n'+
       '       ╚══╩╩══╝        ',
-    caption: 'DOUBLE DIGITS BABY!!!'
+    caption: 'MISSION: DOUBLE DIGITS',
+    speaker: 'BLAKE\'S MOM',
+    dialogue: 'Mom come pick me up I\'m scared... just kidding GIVE ME ANOTHER ONE!! TEN DOWN, INFINITY TO GO!!'
   },
-  // Beer 11: Pouring beer on own head celebration
+  // Beer 11: Beer shower celebration
   {
     art:
       '         ╔═══╗         \n'+
@@ -1132,9 +1232,11 @@ const N64_SCENES = [
       '       ╚╦══════╦╝      \n'+
       '     ~~~█~~~~~~█~~~    \n'+
       '     ~~~▀~~~~~~▀~~~    ',
-    caption: 'BEER SHOWER ACTIVATED'
+    caption: 'MISSION: SHOWER TIME',
+    speaker: 'BLAKE',
+    dialogue: 'REFRESHING!! ...why is everyone staring? THIS IS MY BAPTISM!! BORN AGAIN IN HOPS AND BARLEY!!'
   },
-  // Beer 12: Full 12 pack warrior with helmet
+  // Beer 12: Knight armor
   {
     art:
       '       ╔══════╗        \n'+
@@ -1149,9 +1251,11 @@ const N64_SCENES = [
       '  ╔═══╗║  ██  ║╔═══╗   \n'+
       '  ║ALE║║  ██  ║║ALE║   \n'+
       '  ╚═══╝╚══╩╩══╝╚═══╝   ',
-    caption: '12-PACK KNIGHT ARMOR ON'
+    caption: 'MISSION: SUIT UP',
+    speaker: 'SIR DRINKS-A-LOT',
+    dialogue: 'Sir Drinks-a-Lot reporting for duty!! Full armor equipped. 12-pack shield activated. NONE SHALL PASS... me a beer.'
   },
-  // Beer 13: Chugging upside down (keg stand)
+  // Beer 13: Keg stand
   {
     art:
       '      ══▀════▀══       \n'+
@@ -1167,9 +1271,11 @@ const N64_SCENES = [
       '            ║~~~~║     \n'+
       '            ║ KEG║     \n'+
       '            ╚════╝     ',
-    caption: 'KEG STAND!! 13 SECONDS'
+    caption: 'MISSION: INVERTED',
+    speaker: 'BLAKE (UPSIDE DOWN)',
+    dialogue: 'The blood is rushing to my head... totally worth it though. Is someone counting?? THIRTEEN SECONDS BABY!!'
   },
-  // Beer 14: Seeing double/triple from beer goggles
+  // Beer 14: Beer goggles, seeing triple
   {
     art:
       '  ╔════╗ ╔════╗ ╔════╗ \n'+
@@ -1182,28 +1288,40 @@ const N64_SCENES = [
       '    █       █       █   \n'+
       '    ▀       ▀       ▀   \n'+
       '  WAIT... HOW MANY ME?  ',
-    caption: 'BEER GOGGLES: SEEING 3X'
+    caption: 'MISSION: TRIPLE VISION',
+    speaker: 'ALL 3 BLAKES',
+    dialogue: 'Wait which one is the real bathroom?? Why are there three of me?? OK left Blake you go left, right Blake go right...'
   },
-  // Beer 15: King on beer throne
+  // Beer 15: ISRAELI FLAG + BIBI SPECIAL
   {
     art:
-      '      ╔╗ ╔╗ ╔╗         \n'+
-      '      ╠╬═╬╬═╬╣  CROWN  \n'+
-      '      ╚╬═╬╬═╬╝         \n'+
-      '       ║$  $║          \n'+
-      '       ║ HA ║          \n'+
-      '       ╚═╦══╝          \n'+
-      '  ╔═╗ ╔══╩═══╗ ╔═╗    \n'+
-      '  ║~╠═╣ KING ╠═╣~║    \n'+
-      '  ╚═╝ ╚══╦═══╝ ╚═╝    \n'+
-      ' ╔═╗╔═╗╔═╩═╗╔═╗╔═╗    \n'+
-      ' ║~║║~║║ T ║║~║║~║    \n'+
-      ' ║~║║~║║ H ║║~║║~║    \n'+
-      ' ║~║║~║║ R ║║~║║~║    \n'+
-      ' ╚═╝╚═╝╚═══╝╚═╝╚═╝    ',
-    caption: 'BOW TO THE BEER KING'
+      '  ╔═════════════════╗   \n'+
+      '  ║▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓║   \n'+
+      '  ║                 ║   \n'+
+      '  ║      /\\         ║  \n'+
+      '  ║     /  \\        ║  \n'+
+      '  ║    /  . \\       ║  \n'+
+      '  ║    \\    /  ✡    ║  \n'+
+      '  ║     \\  /        ║  \n'+
+      '  ║      \\/         ║  \n'+
+      '  ║                 ║   \n'+
+      '  ║▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓║   \n'+
+      '  ╚═════════════════╝   \n'+
+      '                        \n'+
+      '     ╔═══════════╗      \n'+
+      '     ║  ╔═════╗  ║      \n'+
+      '     ║  ║ O_O ║  ║      \n'+
+      '     ║  ║ === ║  ║      \n'+
+      '     ║  ╚══╦══╝  ║      \n'+
+      '     ║  ╔══╩══╗  ║      \n'+
+      '     ║  ║BIBI!║  ║      \n'+
+      '     ╚══╩═════╩══╝      ',
+    caption: 'L\'CHAIM!! AM YISRAEL CHAI!',
+    speaker: 'PM BIBI NETANYAHU',
+    dialogue: 'SHALOM BLAKE!! 15 beers?! Even Mossad is impressed! You drink like a true sabra!! KEEP GOING my friend... L\'CHAIM! Am Yisrael Chai! The next round is on Israel!!',
+    israel: true
   },
-  // Beer 16: Dual wielding, beer in each hand + mouth + head
+  // Beer 16: Quad wielding beers
   {
     art:
       '         ╔═╗            \n'+
@@ -1218,11 +1336,13 @@ const N64_SCENES = [
       '       ║ WIELD ║        \n'+
       '       ╚╦════╦═╝        \n'+
       '      ╔═╩╗  ╔╩═╗        \n'+
-      '      ║~~ ║  ║~~║        \n'+
+      '      ║~~║  ║~~║        \n'+
       '      ╚══╝  ╚══╝        ',
-    caption: '4 BEERS AT ONCE!? LEGEND'
+    caption: 'MISSION: QUAD WIELD',
+    speaker: 'BLAKE',
+    dialogue: 'I\'ve evolved past needing just two hands. One in each hand, one in my mouth, one on my head. THIS IS PEAK PERFORMANCE.'
   },
-  // Beer 17: Ascending to a higher plane
+  // Beer 17: Ascending
   {
     art:
       '    ░░░░░░░░░░░░░░     \n'+
@@ -1240,9 +1360,11 @@ const N64_SCENES = [
       '      \\\\|||//         \n'+
       '       \\\\|//          \n'+
       '        \\|/            ',
-    caption: 'TRANSCENDING REALITY'
+    caption: 'MISSION: TRANSCEND',
+    speaker: 'THE UNIVERSE',
+    dialogue: 'I have become one with the sauce. The beer flows through me. I AM the beer. The beer IS me. We are one.'
   },
-  // Beer 18: Multi-armed beer god (like Shiva)
+  // Beer 18: Multi-armed beer god
   {
     art:
       '  ╔═╗╔═╗╔═══╗╔═╗╔═╗   \n'+
@@ -1258,9 +1380,11 @@ const N64_SCENES = [
       '       ╔══╩══╗        \n'+
       '       █     █        \n'+
       '       ▀     ▀        ',
-    caption: '6-ARM BEER GOD MODE'
+    caption: 'MISSION: GOD MODE',
+    speaker: 'BEER GOD BLAKE',
+    dialogue: 'UNLIMITED POWER!! Six arms, six beers! I am the god of hops! Bow before me mortals!! *thunder sounds*'
   },
-  // Beer 19: Godzilla-sized, destroying city
+  // Beer 19: Beerzilla
   {
     art:
       '              ╔═══╗     \n'+
@@ -1276,9 +1400,11 @@ const N64_SCENES = [
       '  ║╚═╝║  █   █  █   █  \n'+
       '  ╚═══╝  ▀   ▀  ▀   ▀  \n'+
       ' ~CITY~  STOMP  STOMP   ',
-    caption: 'BEERZILLA DESTROYS CITY'
+    caption: 'MISSION: DESTROY CITY',
+    speaker: 'NEWS ANCHOR',
+    dialogue: 'BREAKING NEWS: Giant beer-powered man is DESTROYING downtown!! He\'s 50 feet tall and demanding MORE BEERS!! Military has been called!!'
   },
-  // Beer 20: Ultimate form - Hall of Fame monument
+  // Beer 20: Hall of Fame
   {
     art:
       '   ╔═══════════════╗    \n'+
@@ -1298,41 +1424,99 @@ const N64_SCENES = [
       '    ╔═╗╔═╗╔═╗╔═╗╔═╗    \n'+
       '    ║~║║~║║~║║~║║~║    \n'+
       '    ╚═╝╚═╝╚═╝╚═╝╚═╝    ',
-    caption: 'IMMORTALIZED FOREVER'
+    caption: 'MISSION COMPLETE',
+    speaker: 'THE HALL OF FAME',
+    dialogue: 'They said it couldn\'t be done. TWENTY. BEERS. Your statue is being carved as we speak. You are IMMORTALIZED. God help us all.'
   },
 ];
 
 let n64Timer = null;
+let n64TypeTimer = null;
+let n64ArtTimer = null;
 
 function triggerN64Animation(beerNum){
   const overlay = document.getElementById('n64Overlay');
   const artEl = document.getElementById('n64Art');
   const captionEl = document.getElementById('n64Caption');
   const numEl = document.getElementById('n64BeerNum');
+  const dialogueBox = document.getElementById('n64Dialogue');
+  const speakerEl = document.getElementById('n64Speaker');
+  const dialogueText = document.getElementById('n64DialogueText');
 
   // Get scene (clamp to 1-20, cycle if over 20)
   const idx = ((beerNum - 1) % 20);
   const scene = N64_SCENES[idx];
   if(!scene) return;
 
-  // Clear any existing animation
+  // Clear any existing animation/timers
   if(n64Timer){ clearTimeout(n64Timer); n64Timer = null; }
-  overlay.classList.remove('active');
-  void overlay.offsetWidth; // force reflow
+  if(n64TypeTimer){ clearInterval(n64TypeTimer); n64TypeTimer = null; }
+  if(n64ArtTimer){ clearTimeout(n64ArtTimer); n64ArtTimer = null; }
+  overlay.classList.remove('active','israel');
+  dialogueBox.classList.remove('visible');
+  artEl.textContent = '';
+  captionEl.textContent = '';
+  dialogueText.innerHTML = '';
+  numEl.textContent = '';
+  void overlay.offsetWidth;
 
-  // Set content
+  // Apply special class for Beer 15 (Israel)
+  if(scene.israel) overlay.classList.add('israel');
+
+  // Set title
   numEl.textContent = 'BEER #' + beerNum;
-  artEl.textContent = scene.art;
-  captionEl.textContent = scene.caption;
 
-  // Trigger 1-second flash animation
+  // Start the 5-second cutscene
   overlay.classList.add('active');
 
-  // Remove after exactly 1 second (matches animation duration)
-  n64Timer = setTimeout(()=>{
-    overlay.classList.remove('active');
+  // Phase 1 (0.4s delay): Art types out line by line
+  const artLines = scene.art.split('\n');
+  let currentLine = 0;
+  const lineDelay = Math.min(120, 1500 / artLines.length);
+
+  n64ArtTimer = setTimeout(function(){
+    captionEl.textContent = scene.caption;
+    var artBuild = '';
+    n64TypeTimer = setInterval(function(){
+      if(currentLine < artLines.length){
+        artBuild += (currentLine > 0 ? '\n' : '') + artLines[currentLine];
+        artEl.textContent = artBuild;
+        currentLine++;
+      } else {
+        clearInterval(n64TypeTimer);
+        n64TypeTimer = null;
+        // Phase 2: Dialogue types out
+        n64StartDialogue(scene, speakerEl, dialogueText, dialogueBox);
+      }
+    }, lineDelay);
+  }, 400);
+
+  // Remove after 5 seconds
+  n64Timer = setTimeout(function(){
+    overlay.classList.remove('active','israel');
+    dialogueBox.classList.remove('visible');
+    if(n64TypeTimer){ clearInterval(n64TypeTimer); n64TypeTimer = null; }
+    if(n64ArtTimer){ clearTimeout(n64ArtTimer); n64ArtTimer = null; }
     n64Timer = null;
-  }, 1000);
+  }, 5000);
+}
+
+function n64StartDialogue(scene, speakerEl, dialogueText, dialogueBox){
+  speakerEl.textContent = scene.speaker || 'BLAKE';
+  dialogueBox.classList.add('visible');
+  dialogueText.innerHTML = '<span class="n64-cursor"></span>';
+  var fullText = scene.dialogue || '';
+  var charIdx = 0;
+  n64TypeTimer = setInterval(function(){
+    if(charIdx < fullText.length){
+      dialogueText.innerHTML = fullText.substring(0, charIdx + 1) + '<span class="n64-cursor"></span>';
+      charIdx++;
+    } else {
+      clearInterval(n64TypeTimer);
+      n64TypeTimer = null;
+      dialogueText.innerHTML = fullText;
+    }
+  }, 25);
 }
 
 // ========== FLAG + EAGLE ANIMATION ==========
