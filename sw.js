@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blakes-damage-report-v1';
+const CACHE_NAME = 'blakes-damage-report-v3';
 const ASSETS = [
   '/Coachvickk-Sports-Model/',
   '/Coachvickk-Sports-Model/index.html',
@@ -24,17 +24,19 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+// Network-first strategy: always try fresh content, fall back to cache
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        if (response.ok && event.request.method === 'GET') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
+    fetch(event.request).then(response => {
+      if (response.ok && event.request.method === 'GET') {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+      }
+      return response;
+    }).catch(() => {
+      return caches.match(event.request).then(cached => {
+        return cached || caches.match('/Coachvickk-Sports-Model/index.html');
       });
-    }).catch(() => caches.match('/Coachvickk-Sports-Model/index.html'))
+    })
   );
 });
