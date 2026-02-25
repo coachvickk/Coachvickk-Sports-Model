@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "python -m gx470_scraper.main"
+
+[deploy.cron]
+schedule = "0 7 * * *"

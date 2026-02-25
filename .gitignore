@@ -1,0 +1,26 @@
+# Environment
+.env
+
+# Config files with sensitive/user-specific data
+gx470_scraper/config.yaml
+gx470_scraper/dealers.yaml
+
+# Database
+gx470_scraper/listings.db
+
+# Logs
+gx470_scraper/logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

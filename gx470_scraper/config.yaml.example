@@ -1,0 +1,45 @@
+vehicle:
+  make: "Lexus"
+  model: "GX470"
+  year_min: 2003
+  year_max: 2009
+  max_price: 15000
+  max_mileage: 160000
+
+search:
+  zip_code: "41051"
+  radius_miles: 200
+
+scraping:
+  delay_min: 3
+  delay_max: 7
+  max_retries: 3
+  backoff_seconds: [10, 30]
+  listing_max_age_days: 14
+
+email:
+  from_address: "gx470-scraper@yourdomain.com"
+  from_name: "GX470 Scraper"
+
+logging:
+  retain_days: 30
+
+craigslist_metros:
+  - name: "Cincinnati"
+    subdomain: "cincinnati"
+  - name: "Columbus"
+    subdomain: "columbus"
+  - name: "Cleveland"
+    subdomain: "cleveland"
+  - name: "Dayton"
+    subdomain: "dayton"
+  - name: "Louisville"
+    subdomain: "louisville"
+  - name: "Lexington"
+    subdomain: "lexington"
+  - name: "Indianapolis"
+    subdomain: "indianapolis"
+  - name: "Charleston WV"
+    subdomain: "charlestonwv"
+  - name: "Pittsburgh"
+    subdomain: "pittsburgh"

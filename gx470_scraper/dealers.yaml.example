@@ -1,0 +1,31 @@
+# Format: add dealer inventory search URLs below
+# Each entry should point directly to the used inventory search page
+# filtered for Lexus or the specific vehicle where possible
+
+dealers:
+  - name: "Kings Automall Toyota/Lexus"
+    url: "https://www.kingsautomall.com/used-inventory/"
+
+  - name: "Jeff Wyler Lexus of Cincinnati"
+    url: "https://www.jeffwyler.com/lexus/used-vehicles/"
+
+  - name: "Castrucci Lexus Milford"
+    url: "https://www.castruccilexus.com/used-inventory/"
+
+  - name: "Lexus of Louisville"
+    url: "https://www.lexusoflouisville.com/used-inventory/"
+
+  - name: "Lexus of Indianapolis"
+    url: "https://www.lexusofindy.com/used-inventory/"
+
+  - name: "Lexus of Columbus"
+    url: "https://www.lexusofcolumbus.com/used-inventory/"
+
+  - name: "Lexus of Cleveland"
+    url: "https://www.lexusofcleveland.com/used-inventory/"
+
+  - name: "Louisville Auto Auction"
+    url: "https://www.laaonline.com/inventory/"
+
+  - name: "Westside Lexus Cincinnati"
+    url: "https://www.westsidelexus.com/used-inventory/"
