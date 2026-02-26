@@ -1,18 +1,16 @@
-"""Local dealer inventory scraper using Playwright with stealth.
-
-Loops through dealers.yaml entries and attempts generic extraction
-of vehicle title, price, mileage, and detail page link.
-"""
+"""Local dealer inventory scraper using requests + BeautifulSoup."""
 
 import asyncio
 import logging
 import re
+import time
+from urllib.parse import urlparse
 
-from playwright.async_api import async_playwright
+from bs4 import BeautifulSoup
 
 from .base import (
-    CaptchaDetectedError, parse_mileage, parse_price, parse_year,
-    random_delay, random_user_agent, retry_with_backoff, setup_stealth_page,
+    fetch_with_retry, get_session, is_captcha_page,
+    parse_mileage, parse_price, parse_year, random_delay,
 )
 from ..config import load_dealers
 
@@ -22,154 +20,149 @@ SOURCE_NAME = "Local Dealer"
 
 
 async def scrape() -> list[dict]:
+    return await asyncio.to_thread(_scrape_sync)
+
+
+def _scrape_sync() -> list[dict]:
     dealers = load_dealers()
     all_listings = []
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+    session = get_session()
 
-        for dealer in dealers:
-            name = dealer["name"]
-            url = dealer["url"]
-            logger.info(f"[{SOURCE_NAME}] Scraping {name}: {url}")
+    for dealer in dealers:
+        name = dealer["name"]
+        url = dealer["url"]
+        logger.info(f"[{SOURCE_NAME}] Scraping {name}: {url}")
 
-            try:
-                listings = await _scrape_dealer(browser, name, url)
-                all_listings.extend(listings)
-                logger.info(f"[{SOURCE_NAME}] {name}: {len(listings)} listings found")
-            except CaptchaDetectedError:
-                logger.warning(f"[{SOURCE_NAME}] {name}: CAPTCHA detected — skipping")
-            except Exception as e:
-                logger.error(f"[{SOURCE_NAME}] {name} failed: {e}", exc_info=True)
+        try:
+            listings = _scrape_dealer(session, name, url)
+            all_listings.extend(listings)
+            logger.info(f"[{SOURCE_NAME}] {name}: {len(listings)} listings found")
+        except Exception as e:
+            logger.error(f"[{SOURCE_NAME}] {name} failed: {e}", exc_info=True)
 
-            await asyncio.sleep(random_delay())
-
-        await browser.close()
+        time.sleep(random_delay())
 
     logger.info(f"[{SOURCE_NAME}] Total: {len(all_listings)} raw listings")
     return all_listings
 
 
-async def _scrape_dealer(browser, dealer_name: str, url: str) -> list[dict]:
+def _scrape_dealer(session, name: str, url: str) -> list[dict]:
+    resp = fetch_with_retry(url, session=session)
+
+    if not resp:
+        logger.warning(f"[{SOURCE_NAME}] {name}: Failed to fetch {url}")
+        return []
+
+    if is_captcha_page(resp.text):
+        logger.warning(f"[{SOURCE_NAME}] {name}: CAPTCHA detected — skipping")
+        return []
+
+    soup = BeautifulSoup(resp.text, "html.parser")
     listings = []
 
-    page, context, content = await retry_with_backoff(
-        lambda: setup_stealth_page(browser, url)
+    # Generic card detection for dealer sites
+    cards = soup.select(
+        '[class*="vehicle-card"], '
+        '[class*="inventory-listing"], '
+        '[class*="srp-listing"], '
+        '[class*="vehicle_card"], '
+        '[class*="VehicleCard"], '
+        'div[class*="listing"]'
     )
 
-    try:
-        # Wait for page to load
-        await asyncio.sleep(3)
-
-        # Generic approach: look for inventory cards/items
-        cards = await page.query_selector_all(
-            '[class*="vehicle-card"], [class*="inventory-listing"], '
-            '[class*="srp-listing"], [class*="vehicle_card"], '
-            'div[class*="listing"], article, .item, '
-            '[data-type="vehicle"], [class*="VehicleCard"]'
+    if not cards:
+        # Broader fallback
+        cards = soup.select(
+            'a[href*="vehicle"], '
+            'a[href*="inventory"], '
+            'a[href*="VehicleDetail"], '
+            'a[href*="used-"]'
         )
 
-        if not cards:
-            # Fallback: look for any links that might be vehicle listings
-            cards = await page.query_selector_all(
-                'a[href*="vehicle"], a[href*="inventory"], '
-                'a[href*="VehicleDetail"], a[href*="used-"]'
-            )
-
-        for card in cards:
-            try:
-                listing = await _parse_card(card, dealer_name, url)
-                if listing:
-                    listings.append(listing)
-            except Exception as e:
-                logger.debug(f"[{SOURCE_NAME}] {dealer_name}: Failed to parse card: {e}")
-
-    finally:
-        await context.close()
+    for card in cards:
+        try:
+            listing = _parse_card(card, name, url)
+            if listing:
+                listings.append(listing)
+        except Exception as e:
+            logger.debug(f"[{SOURCE_NAME}] {name}: Failed to parse card: {e}")
 
     return listings
 
 
-async def _parse_card(card, dealer_name: str, base_url: str) -> dict | None:
+def _parse_card(card, dealer_name: str, base_url: str) -> dict | None:
     listing = {"source": f"{SOURCE_NAME} - {dealer_name}"}
 
-    # Get full text of the card
-    full_text = (await card.inner_text()).strip()
-    if not full_text or len(full_text) < 5:
+    text = card.get_text(strip=True)
+    if not text or len(text) < 5:
         return None
 
-    # Title — look for heading elements or first meaningful text
-    title_el = await card.query_selector(
-        'h2, h3, h4, [class*="title"], [class*="Title"], '
-        '[class*="name"], [class*="Name"], .vehicle-title'
+    # Title
+    title_el = card.select_one(
+        "h2, h3, h4, [class*='title'], [class*='Title'], "
+        "[class*='name'], [class*='Name'], .vehicle-title"
     )
     if title_el:
-        listing["title"] = (await title_el.inner_text()).strip()
+        listing["title"] = title_el.get_text(strip=True)
     else:
-        # Use first line as title
-        first_line = full_text.split("\n")[0].strip()
+        first_line = text.split('\n')[0].strip()
         if len(first_line) > 5:
             listing["title"] = first_line
 
     if not listing.get("title"):
         return None
 
-    # Quick check: does this look like a GX470?
+    # Quick GX470 check
     title_lower = listing["title"].lower()
     if "gx" not in title_lower and "lexus" not in title_lower:
         return None
 
     # URL
-    link_el = await card.query_selector("a[href]")
-    if link_el:
-        href = await link_el.get_attribute("href")
-        if href:
-            if href.startswith("http"):
-                listing["url"] = href
-            elif href.startswith("/"):
-                from urllib.parse import urlparse
-                parsed = urlparse(base_url)
-                listing["url"] = f"{parsed.scheme}://{parsed.netloc}{href}"
-            else:
-                listing["url"] = f"{base_url.rstrip('/')}/{href}"
-    if not listing.get("url"):
+    link = card.select_one("a[href]")
+    if link:
+        href = link.get("href", "")
+        if href.startswith("http"):
+            listing["url"] = href
+        elif href.startswith("/"):
+            parsed = urlparse(base_url)
+            listing["url"] = f"{parsed.scheme}://{parsed.netloc}{href}"
+        else:
+            listing["url"] = f"{base_url.rstrip('/')}/{href}"
+    else:
         listing["url"] = base_url
 
     # Price
-    price_el = await card.query_selector(
-        '[class*="price"], [class*="Price"], .vehicle-price, '
-        '[class*="amount"], [class*="Amount"]'
+    price_el = card.select_one(
+        "[class*='price'], [class*='Price'], [class*='amount']"
     )
     if price_el:
-        listing["price"] = parse_price(await price_el.inner_text())
+        listing["price"] = parse_price(price_el.get_text())
     else:
-        price_match = re.search(r"\$[\d,]+", full_text)
+        price_match = re.search(r'\$[\d,]+', text)
         if price_match:
             listing["price"] = parse_price(price_match.group())
 
     # Mileage
-    mileage_el = await card.query_selector(
-        '[class*="mileage"], [class*="Mileage"], [class*="miles"], [class*="Miles"]'
+    mileage_el = card.select_one(
+        "[class*='mileage'], [class*='Mileage'], [class*='miles']"
     )
     if mileage_el:
-        listing["mileage"] = parse_mileage(await mileage_el.inner_text())
+        listing["mileage"] = parse_mileage(mileage_el.get_text())
     else:
-        mileage_match = re.search(r"([\d,]+)\s*mi", full_text, re.IGNORECASE)
-        if mileage_match:
-            listing["mileage"] = parse_mileage(mileage_match.group(1))
+        mi_match = re.search(r'([\d,]+)\s*mi', text, re.I)
+        if mi_match:
+            listing["mileage"] = parse_mileage(mi_match.group(1))
 
-    # Year
     listing["year"] = parse_year(listing.get("title", ""))
-
-    # Location
     listing["city"] = dealer_name
     listing["state"] = ""
     listing["seller_type"] = "dealer"
 
-    # Photo
-    img_el = await card.query_selector("img")
-    if img_el:
-        listing["photo_url"] = await img_el.get_attribute("src") or await img_el.get_attribute("data-src")
+    img = card.select_one("img")
+    listing["photo_url"] = None
+    if img:
+        listing["photo_url"] = img.get("src") or img.get("data-src")
 
     listing["date_posted"] = None
     listing["posted_date_unknown"] = True

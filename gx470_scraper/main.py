@@ -16,6 +16,7 @@ from pathlib import Path
 from .config import load_config
 from .database import (
     generate_fingerprint, init_db, listing_exists, save_listing,
+    start_scraper_run, complete_scraper_run, fail_scraper_run,
 )
 from .email_sender import send_digest, send_failure_alert
 from .scrapers import cargurus, autotrader, carsdotcom, autolist, craigslist, local_dealers
@@ -132,6 +133,7 @@ async def run():
     logger.info("=" * 60)
 
     init_db()
+    run_id = start_scraper_run()
 
     stats = {
         "sites_scraped": [],
@@ -164,6 +166,7 @@ async def run():
     if len(stats["errors"]) == len(scrapers):
         logger.error("ALL SCRAPERS FAILED — sending failure alert")
         error_summary = "\n".join(stats["errors"])
+        fail_scraper_run(run_id, error_summary)
         send_failure_alert(error_summary)
         _log_summary(logger, stats, start_time)
         cleanup_old_logs()
@@ -219,6 +222,18 @@ async def run():
         send_digest(new_listings)
     else:
         logger.info("No new listings to send.")
+
+    # Record run results
+    per_site_str = ", ".join(f"{k}: {v}" for k, v in stats["per_site"].items())
+    errors_str = "\n".join(stats["errors"]) if stats["errors"] else ""
+    complete_scraper_run(
+        run_id,
+        total_new=stats["new_listings"],
+        total_skipped=stats["duplicates_skipped"],
+        total_rejected=stats["validation_rejected"],
+        errors=errors_str,
+        per_site=per_site_str,
+    )
 
     _log_summary(logger, stats, start_time)
     cleanup_old_logs()

@@ -53,6 +53,20 @@ def init_db() -> None:
         CREATE INDEX IF NOT EXISTS idx_fingerprint ON listings(fingerprint)
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS scraper_runs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            started_at TEXT NOT NULL,
+            completed_at TEXT,
+            total_new INTEGER DEFAULT 0,
+            total_skipped INTEGER DEFAULT 0,
+            total_rejected INTEGER DEFAULT 0,
+            errors TEXT DEFAULT '',
+            per_site TEXT DEFAULT '',
+            status TEXT DEFAULT 'running'
+        )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -143,3 +157,59 @@ def mark_failed_sends_sent(fingerprints: list[str]) -> None:
         )
     conn.commit()
     conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Scraper run tracking
+# ---------------------------------------------------------------------------
+
+def start_scraper_run() -> int:
+    """Mark a new scraper run as started. Returns run ID."""
+    conn = get_connection()
+    cursor = conn.execute(
+        "INSERT INTO scraper_runs (started_at, status) VALUES (?, 'running')",
+        (datetime.utcnow().isoformat(),),
+    )
+    run_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return run_id
+
+
+def complete_scraper_run(run_id: int, total_new: int, total_skipped: int,
+                         total_rejected: int, errors: str, per_site: str):
+    """Mark a scraper run as complete."""
+    conn = get_connection()
+    conn.execute(
+        "UPDATE scraper_runs SET completed_at=?, total_new=?, total_skipped=?,"
+        " total_rejected=?, errors=?, per_site=?, status='completed' WHERE id=?",
+        (datetime.utcnow().isoformat(), total_new, total_skipped,
+         total_rejected, errors, per_site, run_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def fail_scraper_run(run_id: int, errors: str):
+    """Mark a scraper run as failed."""
+    conn = get_connection()
+    conn.execute(
+        "UPDATE scraper_runs SET completed_at=?, errors=?, status='failed' WHERE id=?",
+        (datetime.utcnow().isoformat(), errors, run_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_last_scraper_run() -> dict | None:
+    """Get the most recent scraper run."""
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            "SELECT * FROM scraper_runs ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        return dict(row) if row else None
+    except Exception:
+        return None
+    finally:
+        conn.close()

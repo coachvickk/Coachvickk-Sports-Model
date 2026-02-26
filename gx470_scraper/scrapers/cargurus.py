@@ -1,15 +1,15 @@
-"""CarGurus scraper using Playwright with stealth."""
+"""CarGurus scraper using requests + HTML/JSON parsing."""
 
 import asyncio
+import json
 import logging
 import re
 
-from playwright.async_api import async_playwright
+from bs4 import BeautifulSoup
 
 from .base import (
-    SEARCH, VEHICLE, CaptchaDetectedError, parse_mileage, parse_price,
-    parse_year, random_delay, random_user_agent, retry_with_backoff,
-    setup_stealth_page, is_captcha_page,
+    SEARCH, VEHICLE, fetch_with_retry, get_session, is_captcha_page,
+    parse_mileage, parse_price, parse_year,
 )
 
 logger = logging.getLogger("gx470_scraper")
@@ -25,11 +25,8 @@ def build_url() -> str:
         f"&sortDir=ASC"
         f"&sourceContext=carGurusHomePageModel"
         f"&distance={SEARCH['radius_miles']}"
-        f"&entitySelectingHelper.selectedEntity=d333"  # Lexus GX 470 entity ID
-        f"&entitySelectingHelper.selectedEntity2="
-        f"&minPrice="
+        f"&entitySelectingHelper.selectedEntity=d333"
         f"&maxPrice={VEHICLE['max_price']}"
-        f"&minMileage="
         f"&maxMileage={VEHICLE['max_mileage']}"
         f"&startYear={VEHICLE['year_min']}"
         f"&endYear={VEHICLE['year_max']}"
@@ -37,118 +34,210 @@ def build_url() -> str:
 
 
 async def scrape() -> list[dict]:
-    """Scrape CarGurus for GX470 listings. Returns list of listing dicts."""
-    listings = []
+    return await asyncio.to_thread(_scrape_sync)
+
+
+def _scrape_sync() -> list[dict]:
     url = build_url()
     logger.info(f"[{SOURCE_NAME}] Starting scrape: {url}")
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        try:
-            page, context, content = await retry_with_backoff(
-                lambda: setup_stealth_page(browser, url)
-            )
+    session = get_session()
+    resp = fetch_with_retry(url, session=session)
 
-            # Wait for listing cards to load
-            try:
-                await page.wait_for_selector(
-                    '[data-cg-ft="car-blade-link"], .pazLpc, article[data-listing-id]',
-                    timeout=15000,
-                )
-            except Exception:
-                logger.warning(f"[{SOURCE_NAME}] Listing selector timeout — parsing page as-is")
+    if not resp:
+        logger.error(f"[{SOURCE_NAME}] Failed to fetch page")
+        return []
 
-            content = await page.content()
+    if is_captcha_page(resp.text):
+        logger.warning(f"[{SOURCE_NAME}] CAPTCHA detected — skipping")
+        return []
 
-            # Extract listing cards
-            cards = await page.query_selector_all(
-                'article[data-listing-id], div[data-cg-ft="car-blade-link"], .pazLpc, a[href*="/listing/"]'
-            )
+    # Try JSON extraction first, then HTML fallback
+    listings = _extract_from_json(resp.text)
 
-            if not cards:
-                # Fallback: try to parse links from page content
-                link_pattern = re.compile(
-                    r'href="(/Cars/inventorylisting/viewDetailsFilterViewInventoryListing\.action[^"]*'
-                    r'|/listing/[^"]*)"'
-                )
-                links_found = link_pattern.findall(content)
-                logger.info(f"[{SOURCE_NAME}] Found {len(links_found)} links via regex fallback")
-
-            for card in cards:
-                try:
-                    listing = await _parse_card(card, page)
-                    if listing:
-                        listings.append(listing)
-                except Exception as e:
-                    logger.debug(f"[{SOURCE_NAME}] Failed to parse card: {e}")
-
-            await context.close()
-
-        except CaptchaDetectedError:
-            logger.warning(f"[{SOURCE_NAME}] CAPTCHA detected — skipping this run")
-        finally:
-            await browser.close()
+    if not listings:
+        soup = BeautifulSoup(resp.text, "html.parser")
+        listings = _extract_from_html(soup)
 
     logger.info(f"[{SOURCE_NAME}] Scraped {len(listings)} raw listings")
     return listings
 
 
-async def _parse_card(card, page) -> dict | None:
-    """Parse a single listing card element into a dict."""
-    listing = {"source": SOURCE_NAME}
+def _extract_from_json(html: str) -> list[dict]:
+    """Extract listing data from embedded JSON in script tags."""
+    listings = []
 
-    # Title
-    title_el = await card.query_selector('h4, [data-cg-ft="car-blade-title"], .iGMEhj')
-    if title_el:
-        listing["title"] = (await title_el.inner_text()).strip()
-    else:
-        text = (await card.inner_text()).strip()
-        first_line = text.split("\n")[0].strip()
-        if first_line:
-            listing["title"] = first_line
+    # CarGurus embeds listing data in various patterns
+    patterns = [
+        r'"listings"\s*:\s*(\[[\s\S]*?\])\s*[,}]',
+        r'"results"\s*:\s*(\[[\s\S]*?\])\s*[,}]',
+        r'cg\.listing\.data\s*=\s*(\[[\s\S]*?\]);',
+    ]
 
-    if not listing.get("title"):
+    for pattern in patterns:
+        matches = re.findall(pattern, html)
+        for match in matches:
+            try:
+                items = json.loads(match)
+                if not isinstance(items, list):
+                    continue
+
+                for item in items:
+                    listing = _parse_json_item(item)
+                    if listing:
+                        listings.append(listing)
+
+                if listings:
+                    return listings
+            except (json.JSONDecodeError, TypeError):
+                continue
+
+    return listings
+
+
+def _parse_json_item(item: dict) -> dict | None:
+    if not isinstance(item, dict):
         return None
 
-    # URL
-    link_el = await card.query_selector('a[href*="/listing/"], a[href*="inventorylisting"]')
-    if link_el:
-        href = await link_el.get_attribute("href")
-        if href:
-            listing["url"] = href if href.startswith("http") else f"https://www.cargurus.com{href}"
-    if not listing.get("url"):
-        listing["url"] = ""
+    listing = {"source": SOURCE_NAME}
 
-    # Price
-    price_el = await card.query_selector('[data-cg-ft="car-blade-price"], .JzvPHo, .price')
-    if price_el:
-        listing["price"] = parse_price(await price_el.inner_text())
+    listing["title"] = (
+        item.get("listingTitle") or
+        item.get("title") or
+        item.get("vehicleTitle") or
+        ""
+    )
 
-    # Mileage
-    mileage_el = await card.query_selector('.JUPkgf, .mileage, [data-cg-ft="car-blade-mileage"]')
-    if mileage_el:
-        listing["mileage"] = parse_mileage(await mileage_el.inner_text())
+    if not listing["title"]:
+        year = item.get("year", "")
+        make = item.get("makeName", item.get("make", ""))
+        model = item.get("modelName", item.get("model", ""))
+        listing["title"] = f"{year} {make} {model}".strip()
 
-    # Year
-    listing["year"] = parse_year(listing.get("title", ""))
+    if not listing["title"]:
+        return None
 
-    # Location
-    loc_el = await card.query_selector('.JKEbmJ, .seller-location, [data-cg-ft="car-blade-location"]')
-    if loc_el:
-        loc_text = (await loc_el.inner_text()).strip()
-        parts = loc_text.rsplit(",", 1)
-        listing["city"] = parts[0].strip() if parts else loc_text
-        listing["state"] = parts[1].strip() if len(parts) > 1 else ""
+    price = item.get("price") or item.get("expectedPrice") or item.get("listingPrice")
+    if isinstance(price, (int, float)):
+        listing["price"] = float(price)
+    elif isinstance(price, str):
+        listing["price"] = parse_price(price)
+    else:
+        listing["price"] = None
 
+    mileage = item.get("mileage") or item.get("miles")
+    if isinstance(mileage, (int, float)):
+        listing["mileage"] = int(mileage)
+    elif isinstance(mileage, str):
+        listing["mileage"] = parse_mileage(mileage)
+    else:
+        listing["mileage"] = None
+
+    listing["year"] = item.get("year") or parse_year(listing["title"])
+
+    listing_id = item.get("id") or item.get("listingId") or ""
+    if listing_id:
+        listing["url"] = (
+            f"https://www.cargurus.com/Cars/inventorylisting/"
+            f"viewDetailsFilterViewInventoryListing.action?listingId={listing_id}"
+        )
+    else:
+        listing["url"] = item.get("url") or item.get("listingUrl") or ""
+
+    listing["city"] = item.get("city") or item.get("dealerCity") or ""
+    listing["state"] = item.get("state") or item.get("dealerState") or ""
     listing["seller_type"] = "dealer"
-
-    # Photo
-    img_el = await card.query_selector("img")
-    if img_el:
-        listing["photo_url"] = await img_el.get_attribute("src")
-
-    # Posted date
+    listing["photo_url"] = (
+        item.get("photoUrl") or
+        item.get("mainPictureUrl") or
+        item.get("imageUrl") or
+        item.get("pictureUrl")
+    )
     listing["date_posted"] = None
     listing["posted_date_unknown"] = True
 
     return listing
+
+
+def _extract_from_html(soup: BeautifulSoup) -> list[dict]:
+    """Fallback: parse listing cards from the HTML."""
+    listings = []
+
+    cards = soup.select(
+        'div[data-listing-id], '
+        'a[data-cg-ft="car-blade-link"], '
+        '.pazLpc, '
+        'a[href*="/listing/"]'
+    )
+
+    for card in cards:
+        try:
+            listing = {"source": SOURCE_NAME}
+
+            # Title
+            title_el = card.select_one("h4, h3, h2, [data-cg-ft='car-blade-title']")
+            if title_el:
+                listing["title"] = title_el.get_text(strip=True)
+            else:
+                text = card.get_text(strip=True)
+                if text and len(text) > 5:
+                    listing["title"] = text.split('\n')[0][:120]
+                else:
+                    continue
+
+            if not listing.get("title"):
+                continue
+
+            # URL
+            href = card.get("href") or ""
+            if not href:
+                link = card.select_one("a[href]")
+                if link:
+                    href = link.get("href", "")
+            if href and not href.startswith("http"):
+                href = f"https://www.cargurus.com{href}"
+            listing["url"] = href
+
+            # Price
+            price_el = card.select_one(
+                "[data-cg-ft='car-blade-price'], .price, [class*='price']"
+            )
+            if price_el:
+                listing["price"] = parse_price(price_el.get_text())
+
+            # Mileage
+            text = card.get_text()
+            mi_match = re.search(r'([\d,]+)\s*mi', text, re.I)
+            if mi_match:
+                listing["mileage"] = parse_mileage(mi_match.group(1))
+
+            listing["year"] = parse_year(listing.get("title", ""))
+
+            # Location
+            loc_el = card.select_one(
+                "[data-cg-ft='car-blade-location'], .seller-location"
+            )
+            if loc_el:
+                loc_text = loc_el.get_text(strip=True)
+                parts = loc_text.rsplit(",", 1)
+                listing["city"] = parts[0].strip()
+                listing["state"] = parts[1].strip() if len(parts) > 1 else ""
+            else:
+                listing["city"] = ""
+                listing["state"] = ""
+
+            listing["seller_type"] = "dealer"
+
+            img = card.select_one("img")
+            listing["photo_url"] = None
+            if img:
+                listing["photo_url"] = img.get("src") or img.get("data-src")
+
+            listing["date_posted"] = None
+            listing["posted_date_unknown"] = True
+
+            listings.append(listing)
+        except Exception as e:
+            logger.debug(f"[{SOURCE_NAME}] Failed to parse card: {e}")
+
+    return listings

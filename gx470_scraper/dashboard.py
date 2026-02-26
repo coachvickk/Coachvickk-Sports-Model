@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 from flask import Flask, jsonify, redirect, request, url_for
 
-from .database import get_connection, init_db
+from .database import get_connection, get_last_scraper_run, init_db
 
 app = Flask(__name__)
 logger = logging.getLogger("gx470_scraper.dashboard")
@@ -101,7 +101,8 @@ def days_ago(date_str):
 # Luxury editorial HTML
 # ---------------------------------------------------------------------------
 
-def render_page(listings, stats, sources, current_sort, current_order, current_source):
+def render_page(listings, stats, sources, current_sort, current_order, current_source,
+                last_run=None):
     source_options = "".join(
         f'<option value="{s}" {"selected" if s == current_source else ""}>{s}</option>'
         for s in sources
@@ -184,6 +185,30 @@ def render_page(listings, stats, sources, current_sort, current_order, current_s
         cls = "pill active" if active else "pill"
         return f'<a href="/?sort={field}&order={o}{src}" class="{cls}">{label}{a}</a>'
 
+    # Build run status HTML
+    run_status_html = ""
+    if last_run:
+        status = last_run.get("status", "unknown")
+        if status == "running":
+            run_status_html = '<div class="run-status running">Scraper running&hellip;</div>'
+        elif status == "completed":
+            new_count = last_run.get("total_new", 0)
+            errors = last_run.get("errors", "")
+            completed = last_run.get("completed_at", "")
+            time_str = days_ago(completed) if completed else "Unknown"
+            err_html = ""
+            if errors:
+                err_count = len(errors.strip().split("\n"))
+                err_html = f' &middot; <span class="run-errors">{err_count} error{"s" if err_count != 1 else ""}</span>'
+            run_status_html = (
+                f'<div class="run-status completed">'
+                f'Last scan: {time_str} &middot; '
+                f'{new_count} new listing{"s" if new_count != 1 else ""}'
+                f'{err_html}</div>'
+            )
+        elif status == "failed":
+            run_status_html = '<div class="run-status failed">Last scan failed — check logs</div>'
+
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -218,6 +243,10 @@ a {{ text-decoration:none; color:inherit; }}
 .nav-run form {{ display:inline; }}
 .nav-run button {{ background:transparent; color:var(--gold); border:1px solid var(--gold-dim); padding:8px 20px; font-family:var(--sans); font-size:11px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; transition:all .2s; }}
 .nav-run button:hover {{ background:var(--gold); color:var(--bg); }}
+.run-status {{ font-size:10px; letter-spacing:1.5px; text-transform:uppercase; padding:8px 24px; border-bottom:1px solid var(--border); color:var(--text-dim); }}
+.run-status.running {{ color:var(--gold); }}
+.run-status.failed {{ color:#c0392b; }}
+.run-errors {{ color:#c0392b; }}
 
 /* ---- STATS ---- */
 .stats {{ display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid var(--border); }}
@@ -297,6 +326,8 @@ a {{ text-decoration:none; color:inherit; }}
     </div>
 </div>
 
+{run_status_html}
+
 <div class="stats">
     <div class="stat">
         <div class="stat-label">Discovered</div>
@@ -354,7 +385,8 @@ def index():
     listings = get_listings(sort=sort, order=order, source=source or None)
     stats = get_stats()
     sources = get_sources()
-    return render_page(listings, stats, sources, sort, order, source)
+    last_run = get_last_scraper_run()
+    return render_page(listings, stats, sources, sort, order, source, last_run)
 
 
 @app.route("/run", methods=["POST"])
