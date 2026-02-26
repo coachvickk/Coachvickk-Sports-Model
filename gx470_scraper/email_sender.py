@@ -1,17 +1,48 @@
-"""Email digest module using SendGrid."""
+"""Email digest module using Gmail SMTP (no third-party service needed)."""
 
 import logging
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from datetime import datetime
 
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Content, MimeType
-
-from .config import get_env, load_config
+from .config import get_env
 from .database import save_failed_send
 
 logger = logging.getLogger("gx470_scraper")
 
-CONFIG = load_config()
+
+def _get_email_config() -> tuple[str, str, str]:
+    """Return (gmail_address, app_password, recipient_email)."""
+    gmail = get_env("GMAIL_ADDRESS")
+    password = get_env("GMAIL_APP_PASSWORD")
+    recipient = get_env("RECIPIENT_EMAIL")
+    return gmail, password, recipient
+
+
+def _send_email(subject: str, html_body: str | None, text_body: str) -> bool:
+    """Send an email via Gmail SMTP. Returns True on success."""
+    gmail, password, recipient = _get_email_config()
+
+    msg = MIMEMultipart("alternative")
+    msg["From"] = gmail
+    msg["To"] = recipient
+    msg["Subject"] = subject
+
+    msg.attach(MIMEText(text_body, "plain"))
+    if html_body:
+        msg.attach(MIMEText(html_body, "html"))
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(gmail, password)
+            server.sendmail(gmail, recipient, msg.as_string())
+        logger.info(f"Email sent successfully to {recipient}")
+        return True
+    except Exception as e:
+        logger.error(f"Gmail SMTP failed: {e}", exc_info=True)
+        return False
 
 
 def send_digest(listings: list[dict]) -> bool:
@@ -20,72 +51,44 @@ def send_digest(listings: list[dict]) -> bool:
         logger.info("No new listings to email — skipping digest.")
         return True
 
-    api_key = get_env("SENDGRID_API_KEY")
-    recipient = get_env("RECIPIENT_EMAIL")
-    from_email = CONFIG["email"]["from_address"]
-
     sorted_listings = sorted(listings, key=lambda x: x.get("price") or 999999)
 
-    subject = f"GX470 Scraper: {len(sorted_listings)} New Listing{'s' if len(sorted_listings) != 1 else ''} — {datetime.utcnow().strftime('%b %d, %Y')}"
+    subject = (
+        f"GX470 Scraper: {len(sorted_listings)} New "
+        f"Listing{'s' if len(sorted_listings) != 1 else ''} — "
+        f"{datetime.utcnow().strftime('%b %d, %Y')}"
+    )
 
     html_body = _build_html(sorted_listings)
     text_body = _build_plaintext(sorted_listings)
 
-    message = Mail(
-        from_email=from_email,
-        to_emails=recipient,
-        subject=subject,
-    )
-    message.content = [
-        Content(MimeType.text, text_body),
-        Content(MimeType.html, html_body),
-    ]
+    success = _send_email(subject, html_body, text_body)
 
-    try:
-        sg = SendGridAPIClient(api_key)
-        response = sg.send(message)
-        logger.info(f"Email sent successfully. Status: {response.status_code}")
-        return True
-    except Exception as e:
-        logger.error(f"SendGrid failed: {e}", exc_info=True)
+    if not success:
         fingerprints = [l["fingerprint"] for l in sorted_listings if "fingerprint" in l]
         if fingerprints:
             save_failed_send(fingerprints)
-            logger.info(f"Saved {len(fingerprints)} listings to failed_sends table for manual review.")
-        return False
+            logger.info(
+                f"Saved {len(fingerprints)} listings to failed_sends table for manual review."
+            )
+
+    return success
 
 
 def send_failure_alert(error_summary: str) -> bool:
     """Send a plain-text alert that all scrapers failed."""
-    try:
-        api_key = get_env("SENDGRID_API_KEY")
-        recipient = get_env("RECIPIENT_EMAIL")
-        from_email = CONFIG["email"]["from_address"]
-    except EnvironmentError:
-        logger.error("Cannot send failure alert — missing environment variables")
-        return False
-
     subject = "GX470 Scraper — ALL SCRAPERS FAILED"
     body = (
         f"GX470 Scraper Alert\n"
         f"{'=' * 40}\n\n"
-        f"All scrapers failed during the run at {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}.\n\n"
+        f"All scrapers failed during the run at "
+        f"{datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}.\n\n"
         f"Error Summary:\n{error_summary}\n\n"
         f"Please check the logs and investigate.\n"
     )
 
-    message = Mail(
-        from_email=from_email,
-        to_emails=recipient,
-        subject=subject,
-    )
-    message.content = [Content(MimeType.text, body)]
-
     try:
-        sg = SendGridAPIClient(api_key)
-        response = sg.send(message)
-        logger.info(f"Failure alert sent. Status: {response.status_code}")
-        return True
+        return _send_email(subject, None, body)
     except Exception as e:
         logger.error(f"Failed to send failure alert: {e}", exc_info=True)
         return False
@@ -116,7 +119,6 @@ def _build_html(listings: list[dict]) -> str:
         source = l.get("source", "Unknown")
         url = l.get("url", "#")
 
-        # Days since posted
         days_str = ""
         if l.get("posted_date_unknown"):
             days_str = '<span style="color:#e67e22;">Posted date unknown</span>'
