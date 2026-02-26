@@ -19,4 +19,4 @@ RUN playwright install --with-deps chromium
 
 COPY . .
 
-CMD ["python", "-m", "gx470_scraper.main"]
+CMD ["python", "-m", "gx470_scraper.serve"]

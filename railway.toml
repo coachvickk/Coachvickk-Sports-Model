@@ -3,7 +3,4 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "python -m gx470_scraper.main"
-
-[deploy.cron]
-schedule = "0 7 * * *"
+startCommand = "python -m gx470_scraper.serve"
