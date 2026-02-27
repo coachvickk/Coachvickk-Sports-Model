@@ -1,0 +1,29 @@
+[project]
+id = "your-project-id"
+
+[api]
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+
+[db]
+port = 54322
+major_version = 15
+
+[auth]
+site_url = "exp://localhost"
+additional_redirect_urls = ["exp://localhost"]
+jwt_expiry = 3600
+enable_signup = true
+
+[functions.plaid-link]
+verify_jwt = true
+
+[functions.plaid-exchange]
+verify_jwt = true
+
+[functions.plaid-sync]
+verify_jwt = true
+
+[functions.plaid-webhook]
+verify_jwt = false
